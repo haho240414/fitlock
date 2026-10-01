@@ -13,9 +13,9 @@
 
 ## 설치 (안드로이드 폰)
 
-| APK 받기 |
-|---|
-| [fitlock.apk](https://github.com/haho240414/fitlock/releases/latest/download/fitlock.apk) (GitHub Releases — CI 가 에뮬레이터 점검을 통과한 버전만 올라간다) |
+| APK 받기 | QR |
+|---|:-:|
+| [fitlock.apk](https://github.com/haho240414/fitlock/releases/latest/download/fitlock.apk) — GitHub Releases. CI 가 에뮬레이터(안드로이드 14·16) 점검을 통과한 버전만 올라간다 | <img src="docs/qr-apk.png" width="140" alt="APK 다운로드 QR"> |
 
 1. 폰에서 위 링크 → 받기 → 설치 ("출처를 알 수 없는 앱" 허용, Play 프로텍트 경고는 '무시하고 설치')
 2. 앱 → **잠금 켜기** → 안내대로 권한을 켠다
