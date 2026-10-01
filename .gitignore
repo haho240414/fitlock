@@ -5,3 +5,4 @@ android-signing/
 *.p12
 test/videos*/
 .DS_Store
+smoke-out/

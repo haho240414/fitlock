@@ -100,6 +100,7 @@ function lockCardHtml() {
     <div class="why">오늘 건너뛰기 ${today.skips}번 · 기록 손해 없이 ${left}번 더 가능</div>
     ${warns.map((w) => `<div class="warn">⚠️ ${esc(w)}</div>`).join('')}
     ${warns.length ? '<button class="btn sm" style="margin-top:10px" data-action="setup">고치기</button>' : ''}
+    ${d?.reason === 'free' ? '<button class="btn ghost sm" style="margin-top:8px" data-action="relock">자유 시간 끝내고 다시 잠그기</button>' : ''}
   </section>`;
 }
 
@@ -501,6 +502,12 @@ async function onAction(el) {
       return;
     }
     case 'theme': updateState((s) => setTheme(s, id)); render(); toast(`잠금화면 테마: ${THEMES[id]}`); return;
+    case 'relock':
+      await FitLock?.relock().catch(() => {});
+      await refreshStatus();
+      render();
+      toast('다음에 화면을 켜면 다시 잠겨요');
+      return;
     case 'lock-toggle':
       if (el.checked) { el.checked = false; return openSetup(); }
       return changeSettings((s) => { s.lock.enabled = false; });
@@ -618,6 +625,6 @@ async function init() {
   setInterval(() => { if (tab === 'home' && document.visibilityState === 'visible') refreshStatus().then(render); }, 30000);
 }
 
-window.__fitlockApp = { refreshAll, syncNative, status: () => status, info: () => info, openSetup, go };
+window.__fitlockApp = { refreshAll, syncNative, status: () => status, info: () => info, openSetup, go, FitLock };
 
 init();
