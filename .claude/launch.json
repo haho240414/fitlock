@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "fitlock",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tools/serve.mjs", "--port", "8870"],
+      "port": 8870
+    }
+  ]
+}

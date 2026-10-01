@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0b0e1a">
+  <title>핏락 잠금</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="lock theme-basic">
+  <main class="lk" id="lk">
+    <header class="lk-top">
+      <div class="lk-time" id="lk-time">--:--</div>
+      <div class="lk-date" id="lk-date"></div>
+      <div class="lk-stats">
+        <span class="chip coin">🪙 <b id="lk-points">0</b>P</span>
+        <span class="chip fire">🔥 <b id="lk-streak">0</b>일</span>
+        <span class="chip lv">Lv.<b id="lk-level">1</b></span>
+        <span class="chip" id="lk-today">오늘 0개</span>
+      </div>
+    </header>
+
+    <section class="lk-main" id="lk-main">
+      <div class="lk-goal" id="lk-goal">스쿼트 <b>10개</b> 하면 열려요</div>
+      <div class="ring" id="lk-ring" aria-live="polite">
+        <svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="prog" id="lk-prog" cx="60" cy="60" r="52"/></svg>
+        <div class="ring-num"><b id="lk-count">0</b><span>/ <i id="lk-target">10</i></span></div>
+      </div>
+      <div class="lk-meter" id="lk-meter-box">
+        <div class="bar" id="lk-meter"><i></i><span class="mark" id="lk-mark"></span></div>
+        <div class="lbl"><span>서 있음</span><span>이만큼 앉으면 1회</span></div>
+      </div>
+      <p class="lk-hint" id="lk-hint">폰을 두 손으로 가슴에 대고, 엉덩이를 뒤로 빼며 앉았다 일어나세요</p>
+      <canvas class="lk-demo" id="lk-demo" aria-hidden="true"></canvas>
+      <div class="lk-modes" role="group" aria-label="세는 방법">
+        <button id="lk-mode-sensor" class="on">📱 폰 들고</button>
+        <button id="lk-mode-camera">📷 세워 두고</button>
+      </div>
+    </section>
+
+    <footer>
+      <p class="lk-note">운동 습관용 잠금이에요 · 보안 잠금(PIN·지문)은 그대로예요</p>
+      <!-- 브라우저 미리 보기·연습에서만 보이는 버튼 (안드로이드 잠금 화면에선 네이티브 버튼 줄이 대신한다) -->
+      <div class="lk-webbar" id="lk-webbar" hidden>
+        <button class="btn" id="lk-web-skip">급할 때 그냥 열기</button>
+        <button class="btn ghost" id="lk-web-close">그만하기</button>
+      </div>
+    </footer>
+  </main>
+
+  <section class="lk-cam" id="lk-cam" hidden>
+    <video id="lk-video" playsinline muted></video>
+    <canvas id="lk-skel"></canvas>
+    <div class="over">
+      <div class="count"><b id="lk-cam-count">0</b><span> / <i id="lk-cam-target">10</i></span></div>
+      <div class="chip" id="lk-cam-ex">스쿼트</div>
+    </div>
+    <div class="msg" id="lk-cam-msg">카메라 켜는 중…</div>
+    <button class="btn sm back" id="lk-cam-back">📱 폰 들고 하기</button>
+  </section>
+
+  <section class="lk-done" id="lk-done" hidden>
+    <div>
+      <div style="font-size:56px">🔓</div>
+      <h1 id="lk-done-title">열렸어요!</h1>
+      <div class="total" id="lk-done-total">+0P</div>
+      <ul id="lk-done-list"></ul>
+      <div class="lvup" id="lk-done-lvup" hidden></div>
+      <div class="lk-webbar" id="lk-done-bar" hidden><button class="btn primary" id="lk-done-close">확인</button></div>
+    </div>
+  </section>
+
+  <script type="module" src="js/lock.js"></script>
+</body>
+</html>
