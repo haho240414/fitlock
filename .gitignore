@@ -1,0 +1,7 @@
+node_modules/
+dist/
+android-signing/
+*.keystore
+*.p12
+test/videos*/
+.DS_Store
