@@ -328,17 +328,23 @@ async function init() {
     setTimeout(() => location.reload(), 1200);
   });
 
-  // 보이는지: 안드로이드 잠금 화면은 네이티브가 알려 준다(화면 꺼짐·다른 화면에 가려짐), 그 밖엔 문서 가시성
-  window.addEventListener('fitlock:visible', () => setVisible(true));
-  window.addEventListener('fitlock:hidden', () => { setVisible(false); });
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') setVisible(false);
-    else if (ui.kind !== 'lock' || ui.info?.visible !== false) setVisible(true);
-  });
   window.addEventListener('pagehide', () => { stopCounting(); if (!ui.done) saveLog('leave'); });
-  const vis = ui.kind === 'lock' ? ui.info?.visible !== false : document.visibilityState !== 'hidden';
-  setVisible(vis);
+  ready = true;
+  setVisible(computeVisible());
 }
+
+// 보이는지: 안드로이드 잠금 화면은 네이티브가 알려 준다(화면 꺼짐·PIN 화면·다른 화면에 가려짐), 그 밖엔 문서 가시성.
+// 시작하는 동안 온 알림도 놓치지 않게 맨 처음에 듣는다.
+let ready = false;
+let nativeVisible = null;
+function computeVisible() {
+  if (document.visibilityState === 'hidden') return false;
+  if (ui.kind === 'lock') return nativeVisible ?? ui.info?.visible !== false;
+  return true;
+}
+window.addEventListener('fitlock:visible', () => { nativeVisible = true; if (ready) setVisible(computeVisible()); });
+window.addEventListener('fitlock:hidden', () => { nativeVisible = false; if (ready) setVisible(computeVisible()); });
+document.addEventListener('visibilitychange', () => { if (ready) setVisible(computeVisible()); });
 
 // 자동 점검·개발용: 가짜 센서 값 넣기 (예: __fitlock.inject('squat10'))
 window.__fitlock = {
