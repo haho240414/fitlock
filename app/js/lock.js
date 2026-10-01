@@ -228,7 +228,8 @@ async function complete() {
   ui.done = true;
   stopCounting();
   saveLog('success');
-  const kind = ui.kind === 'practice' ? 'practice' : 'unlock';
+  // 앱에서 '잠금화면 보기'(미리 보기)로 한 건 연습으로 친다 (잠금 해제 보너스·미션 없음)
+  const kind = ui.kind === 'practice' || ui.info?.reason === 'preview' ? 'practice' : 'unlock';
   const res = updateState((s) => recordSession(s, {
     kind, exercise: exId(), mode: ui.mode, reps: ui.count, target, name: exName(),
   }));
