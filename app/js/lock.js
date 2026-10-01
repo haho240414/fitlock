@@ -7,7 +7,7 @@
 import { $, fmt, hhmm, dateLabel, toast, coinBurst } from './ui.js';
 import { FitLock, buzz } from './native.js';
 import { loadSettings, loadState, updateState } from './store.js';
-import { recordSession, recordSkip, recordPass, levelInfo, streakInfo, todaySummary } from './rewards.js';
+import { recordSession, recordSkip, recordPass, levelInfo, streakInfo, todaySummary, summaryOf } from './rewards.js';
 import { SENSOR_EXERCISES } from './motion/rep-sensor.js';
 import { MotionCounter } from './motion/source.js';
 import { saveRecording } from './sensorlog.js';
@@ -155,6 +155,8 @@ async function startCamera() {
   $('lk-cam').hidden = false;
   $('lk-cam-msg').textContent = '카메라 켜는 중…';
   const { CameraCounter } = await import('./camera-counter.js');
+  // 불러오는 사이 화면이 꺼졌거나 다른 방법으로 바꿨으면 켜지 않는다 (카메라는 보일 때만)
+  if (!ui.visible || ui.done || ui.mode !== 'camera') return;
   if (!cam) {
     cam = new CameraCounter({
       video: $('lk-video'), canvas: $('lk-skel'), exercise: camEx, gpu: st.gpu !== false,
@@ -231,6 +233,7 @@ async function complete() {
     kind, exercise: exId(), mode: ui.mode, reps: ui.count, target, name: exName(),
   }));
   showDone(res);
+  FitLock?.setSummary({ summary: summaryOf(loadState()) }).catch(() => {}); // 상단 알림의 포인트도 바로
   voice.say(kind === 'unlock' ? '완료! 잠금이 열려요' : '완료! 잘했어요', { interrupt: false });
   setTimeout(() => finish('success', { points: res.total }), ui.kind === 'browser' ? 0 : 2000);
 }

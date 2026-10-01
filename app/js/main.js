@@ -6,7 +6,7 @@ import { FitLock, NativeApp, canShareFile, shareTextFile, downloadText } from '.
 import { loadSettings, updateSettings, loadState, updateState, onExternalChange, exportAll, importAll, resetAll } from './store.js';
 import {
   levelInfo, streakInfo, weekDots, todaySummary, missionsFor, claimMission, SHOP, THEMES, buy, setTheme,
-  recentDays, totals, skipsLeft, ingestNativeEvents, levelThreshold,
+  recentDays, totals, skipsLeft, ingestNativeEvents, levelThreshold, summaryOf,
 } from './rewards.js';
 import { SENSOR_EXERCISES } from './motion/rep-sensor.js';
 import { listRecordings, exportRecordings, clearRecordings, setTruth } from './sensorlog.js';
@@ -37,8 +37,6 @@ async function syncNative() {
   if (!FitLock) return;
   const st = loadSettings();
   const s = loadState();
-  const sk = streakInfo(s);
-  const today = todaySummary(s);
   try {
     await FitLock.setConfig({
       config: {
@@ -50,7 +48,7 @@ async function syncNative() {
         places: st.lock.places,
         target: st.target,
         exerciseName: exNameOf(st),
-        summary: `🪙 ${fmt(s.points)}P · 🔥 ${sk.count}일 · 오늘 ${fmt(today.reps)}개`,
+        summary: summaryOf(s),
       },
     });
   } catch (e) { console.warn('setConfig', e); }

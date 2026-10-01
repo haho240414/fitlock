@@ -373,3 +373,9 @@ export function totals(state) {
   }
   return { reps, unlocks, skips, days };
 }
+
+/** 상단 알림에 보일 한 줄 요약 */
+export function summaryOf(state, today = dayKey()) {
+  const n = (x) => Math.round(x || 0).toLocaleString('ko-KR');
+  return `🪙 ${n(state.points)}P · 🔥 ${streakInfo(state, today).count}일 · 오늘 ${n(todaySummary(state, today).reps)}개`;
+}

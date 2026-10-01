@@ -117,6 +117,16 @@ class FitLockPlugin : Plugin() {
         call.resolve(JSObject().put("serviceRunning", LockService.running))
     }
 
+    /** 상단 알림 요약만 바꾸기 (잠금 화면에서 운동한 뒤 — 앱 화면이 안 열려 있어도) */
+    @PluginMethod
+    fun setSummary(call: PluginCall) {
+        val cfg = LockPrefs.config(context)
+        cfg.put("summary", call.getString("summary", "") ?: "")
+        LockPrefs.setConfig(context, cfg)
+        LockService.refresh(context)
+        call.resolve()
+    }
+
     /** 설정 화면 열기: overlay(다른 앱 위에 표시) · app(앱 정보 — 제한된 설정 허용) · notifications · battery */
     @PluginMethod
     fun openSettings(call: PluginCall) {
