@@ -72,7 +72,7 @@ b, strong { font-weight: 800; }
 .btn.ghost { background: transparent; }
 .btn.danger { color: var(--danger); }
 .btn.block { width: 100%; }
-.btn.sm { min-height: 36px; padding: 0 12px; font-size: 14px; border-radius: 11px; }
+.btn.sm { min-height: 36px; padding: 0 12px; font-size: 14px; border-radius: 11px; flex-shrink: 0; white-space: nowrap; }
 .btn:disabled { opacity: .45; }
 
 .chip {
@@ -201,7 +201,7 @@ select, input[type="time"], input[type="text"], input[type="number"] {
 .lockcard .warn { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 176, 32, .1); color: var(--warn); font-size: 14px; font-weight: 700; }
 
 .big-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
-.big-actions .btn { min-height: 64px; flex-direction: column; gap: 0; font-size: 16px; }
+.big-actions .btn { min-height: 64px; flex-direction: column; gap: 0; font-size: clamp(13px, 4.1vw, 16px); padding: 0 8px; white-space: nowrap; }
 .big-actions .btn small { font-weight: 600; font-size: 12px; opacity: .75; }
 
 .mission { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
@@ -265,7 +265,7 @@ body.lock.theme-forest { --lk1: #1f5a3c; --lk2: #08160f; --lk-accent: #b6f27a; }
 .lk-time { font-size: 64px; font-weight: 300; letter-spacing: -2px; line-height: 1; font-variant-numeric: tabular-nums; }
 .lk-date { color: var(--muted); margin-top: 6px; font-weight: 600; }
 .lk-stats { display: flex; justify-content: center; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
-.lk-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 0; }
+.lk-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 12px; min-height: 0; overflow: hidden; }
 .lk-goal { font-size: 20px; font-weight: 800; text-align: center; }
 .lk-goal b { color: var(--lk-accent); }
 .ring { position: relative; width: min(58vw, 240px); aspect-ratio: 1; }
@@ -290,7 +290,25 @@ body.lock.theme-forest { --lk1: #1f5a3c; --lk2: #08160f; --lk-accent: #b6f27a; }
 .lk-modes button.on { background: var(--lk-accent); color: #111; }
 .lk-note { text-align: center; color: var(--dim); font-size: 12px; margin: 6px 0 0; }
 .lk-webbar { display: flex; gap: 8px; margin-top: 8px; }
-.lk-webbar .btn { flex: 1; min-height: 52px; }
+.lk-webbar .btn { flex: 1; min-height: 52px; font-size: 15px; white-space: nowrap; padding: 0 8px; }
+/* 낮은 화면(작은 폰·에뮬레이터 640px) — 겹치지 않게 줄이고 덜 중요한 것부터 숨긴다 */
+@media (max-height: 780px) {
+  .lk { padding-top: calc(10px + var(--safe-t)); }
+  .lk-time { font-size: 50px; }
+  .lk-stats { margin-top: 8px; }
+  .lk-main { gap: 8px; }
+  .lk-goal { font-size: 18px; }
+  .ring { width: min(52vw, 30vh, 220px); }
+  .ring-num b { font-size: 60px; }
+  .lk-hint { font-size: 14px; min-height: 0; }
+  .lk-demo { display: none; }
+}
+@media (max-height: 640px) {
+  .lk-date, .lk-note { display: none; }
+  .lk-time { font-size: 40px; }
+  .ring { width: min(46vw, 27vh, 200px); }
+  .ring-num b { font-size: 50px; }
+}
 
 /* 카메라 모드 */
 .lk-cam { position: fixed; inset: 0; z-index: 5; background: #000; }
@@ -308,7 +326,7 @@ body.lock.theme-forest { --lk1: #1f5a3c; --lk2: #08160f; --lk-accent: #b6f27a; }
   position: absolute; left: 16px; right: 16px; bottom: calc(16px + var(--safe-b) + var(--native-bar));
   text-align: center; font-weight: 800; font-size: 17px; text-shadow: 0 1px 6px rgba(0, 0, 0, .8);
 }
-.lk-cam .back { position: absolute; right: 16px; bottom: calc(60px + var(--safe-b) + var(--native-bar)); }
+.lk-cam .side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 
 /* 성공 */
 .lk-done { position: fixed; inset: 0; z-index: 10; display: grid; place-content: center; text-align: center; padding: 24px; background: radial-gradient(circle at 50% 38%, rgba(200, 245, 60, .22), transparent 55%), var(--bg); }

@@ -46,7 +46,7 @@ function lockState() {
   return { lockAlive: a.includes(`${PKG}/.LockActivity`), resumed, keyguard: kg === 'true' ? true : kg === 'false' ? false : null };
 }
 function focus() {
-  const w = sh('dumpsys window windows');
+  const w = sh('dumpsys window');
   return (w.match(/mCurrentFocus=Window\{[^}]*\s(\S+)\}/) || [])[1] || null;
 }
 const state = () => ({ ...lockState(), focus: focus() });
@@ -290,7 +290,7 @@ const em = tapText(/긴급 전화/);
 await sleep(3500);
 const s4 = log('10 긴급 전화', { tapped: em, ...state() });
 shot('11_emergency');
-check('emergency', !!em && !s4.lockAlive && /emergency|dialer|phone/i.test(s4.focus || ''), false);
+check('emergency', !!em && !s4.lockAlive && /emergency|dialer|phone/i.test(`${s4.resumed} ${s4.focus}`), false);
 sh('input keyevent 4');
 await sleep(1000);
 

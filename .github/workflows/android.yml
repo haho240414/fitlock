@@ -83,10 +83,14 @@ jobs:
           path: dist/*.apk
 
   smoke:
-    name: 에뮬레이터 점검 (잠금 흐름)
+    name: 에뮬레이터 점검 (안드로이드 ${{ matrix.api }})
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [34, 36]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -104,7 +108,7 @@ jobs:
       - name: 화면 끄기·켜기 → 잠금 위 운동 화면 → 스쿼트(가짜 센서) → 열림 → 건너뛰기·전화·카메라
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
+          api-level: ${{ matrix.api }}
           target: google_apis
           arch: x86_64
           disable-animations: true
@@ -113,7 +117,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: smoke-result
+          name: smoke-result-api${{ matrix.api }}
           path: smoke-out
 
   release:
