@@ -32,7 +32,7 @@ export function toast(msg, ms = 2400) {
  * 아래에서 올라오는 창. actions: [{label, cls, onClick(close) → false 면 안 닫음}]
  * @returns {() => void} 닫기
  */
-export function sheet({ title = '', html = '', actions = [], dismissable = true, steps = null }) {
+export function sheet({ title = '', html = '', actions = [], dismissable = true, steps = null, onClose = null }) {
   const back = document.createElement('div');
   back.className = 'sheet-back';
   const box = document.createElement('div');
@@ -41,7 +41,14 @@ export function sheet({ title = '', html = '', actions = [], dismissable = true,
   box.setAttribute('aria-modal', 'true');
   box.innerHTML = `${steps ? `<div class="steps">${Array.from({ length: steps.n }, (_, i) => `<i class="${i <= steps.i ? 'on' : ''}"></i>`).join('')}</div>` : ''}
     ${title ? `<h2>${esc(title)}</h2>` : ''}<div class="sheet-body">${html}</div><div class="actions"></div>`;
-  const close = () => back.remove();
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    back.remove();
+    onClose?.();
+  };
+  back._close = close; // 뒤로 가기 버튼 등 바깥에서 닫을 때도 onClose 가 불리게
   for (const a of actions) {
     const b = document.createElement('button');
     b.className = `btn block ${a.cls || ''}`;

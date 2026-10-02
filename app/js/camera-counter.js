@@ -25,10 +25,14 @@ export function cameraExercises() {
 export class CameraCounter {
   /**
    * @param {{video:HTMLVideoElement, canvas:HTMLCanvasElement, exercise:string, gpu?:boolean,
-   *   onRep:(n:number)=>void, onStatus:(t:string)=>void, onCue?:(t:string)=>void}} o
+   *   camera?:{deviceId?:string, facing?:string}|null,
+   *   onRep:(n:number)=>void, onStatus:(t:string)=>void, onCue?:(t:string)=>void,
+   *   onFrame?:(f:{code:string,text:string,speak:boolean}|null, good:boolean)=>void}} o
    */
-  constructor({ video, canvas, exercise = 'squat', gpu = true, onRep, onStatus, onCue = () => {} }) {
-    Object.assign(this, { video, canvas, exercise, gpu, onRep, onStatus, onCue });
+  constructor({ video, canvas, exercise = 'squat', gpu = true, camera = null, onRep, onStatus, onCue = () => {}, onFrame = () => {} }) {
+    Object.assign(this, { video, canvas, exercise, gpu, camera, onRep, onStatus, onCue, onFrame });
+    // 후면 카메라는 거울처럼 뒤집지 않고, 기울기 보정의 앞뒤 방향도 반대다
+    this.back = camera?.facing === 'environment';
     this.running = false;
     this.stream = null;
     this.accum = 0;  // 이미 끊긴 세트의 횟수 (사람이 화면 밖으로 나갔다 오면 추적기가 세트를 끊는다)
@@ -42,7 +46,7 @@ export class CameraCounter {
     this.running = true;
     this.onStatus('카메라 켜는 중…');
     // 카메라가 안 되면(권한 거부·다른 앱이 사용 중) 여기서 오류 → 부른 쪽이 처리
-    this.stream = await openCamera({ cameraWide: true });
+    this.stream = await openCamera({ cameraWide: true, cameraId: this.camera?.deviceId || null });
     if (!this.running) { this.stop(); return; }
     await widenCamera(this.stream, true).catch(() => {});
     this.video.srcObject = this.stream;
@@ -59,7 +63,7 @@ export class CameraCounter {
     }
     if (!this.running) { this.stop(); return; }
     this.tracker = new Tracker({ fixed: this.exercise, minSetReps: 1, holdMin: 1, idleSec: 600 });
-    const up = this.tilt.cameraUp();
+    const up = this._cameraUp();
     if (up) this.tracker.setCameraUp(up);
     this.t0 = performance.now();
     this.lastTs = 0;
@@ -96,9 +100,10 @@ export class CameraCounter {
     if (this.frames === 60) guard(null); // GPU 로 60장 무사히 → 안전
     const lm = res.landmarks?.[0] || null;
     const wl = res.worldLandmarks?.[0] || null;
-    if (this.frames % 30 === 0) { const up = this.tilt.cameraUp(); if (up) this.tracker.setCameraUp(up); }
+    if (this.frames % 30 === 0) { const up = this._cameraUp(); if (up) this.tracker.setCameraUp(up); }
     const events = this.tracker.update((now - this.t0) / 1000, lm, wl);
     this._draw(lm);
+    if (this.frames % 5 === 0) this._framing(now);
     for (const e of events) {
       if (e.type === 'personFound') this.onStatus('좋아요! 시작하세요');
       if (e.type === 'setStart' || e.type === 'rep') {
@@ -110,6 +115,38 @@ export class CameraCounter {
         this.onCue(e.text);
       }
     }
+  }
+
+  /** 폰 기울기 센서로 본 '카메라 좌표의 위쪽'. 후면 카메라는 보는 방향이 화면 반대라 앞뒤(z)를 뒤집는다 */
+  _cameraUp() {
+    const up = this.tilt.cameraUp();
+    if (!up || !this.back) return up;
+    return [up[0], up[1], -up[2]];
+  }
+
+  /**
+   * 자리 잡기 안내 (핸즈프리 PT workout.js _framing 그대로): 안 보이는 부위에 따라 어떻게 하면 되는지.
+   * 세기 시작 전에만, 같은 문제가 1초 넘게 이어질 때 알린다. 잘 보이면 good=true 한 번.
+   */
+  _framing(now) {
+    if (this.count > 0) return;
+    const raw = this.tracker.snapshot().raw;
+    let f = null;
+    if (raw) {
+      const s = raw.seen || {};
+      if (raw.torsoFrac > 0.42) f = { code: 'close', text: '너무 가까워요. 한두 걸음 뒤로 가 주세요', speak: true };
+      else if (!s.knees) f = { code: 'knees', text: '무릎까지 보이게 뒤로 가거나 폰을 낮춰 주세요', speak: true };
+      else if (!s.head) f = { code: 'head', text: '머리까지 보이게 폰을 세우거나 뒤로 가 주세요', speak: true };
+      else if (raw.cutoff) f = { code: 'edge', text: '몸 일부가 화면 밖이에요. 가운데로 와 주세요', speak: false };
+    } else f = { code: 'none', text: this.back ? '폰 뒷면(카메라) 앞에 전신이 보이게 서 주세요' : '전신이 보이게 서 주세요', speak: false };
+    if (f?.code !== this.frameCode) { this.frameCode = f?.code ?? null; this.frameSince = now; }
+    if (f && now - this.frameSince < 1000) return;
+    if (!f) {
+      if (!this.framedOk && now - this.frameSince > 1200) { this.framedOk = true; this.onFrame(null, true); }
+      return;
+    }
+    this.framedOk = false;
+    this.onFrame(f, false);
   }
 
   _draw(lm) {

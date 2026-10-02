@@ -152,18 +152,43 @@ function startSensor() {
   loop();
 }
 
+// 자리 잡기 안내 음성: 같은 말은 두 번까지, 10초 간격 (세기 시작 전에만 — camera-counter 가 그때만 알린다)
+const frameSaid = {};
+let lastFrameSay = 0;
+function onFrame(f, good) {
+  const msg = $('lk-cam-msg');
+  if (good) {
+    msg.textContent = '좋아요! 이 자리에서 시작하세요';
+    voice.say('좋아요. 이 자리에서 시작하세요', { interrupt: true });
+    return;
+  }
+  if (!f) return;
+  msg.textContent = f.text;
+  const now = performance.now();
+  if (f.speak && (frameSaid[f.code] || 0) < 2 && now - lastFrameSay > 10000) {
+    frameSaid[f.code] = (frameSaid[f.code] || 0) + 1;
+    lastFrameSay = now;
+    voice.say(f.text, { interrupt: true });
+  }
+}
+
 async function startCamera() {
+  const back = st.camera?.facing === 'environment';
   $('lk-cam').hidden = false;
-  $('lk-cam-msg').textContent = '카메라 켜는 중…';
+  $('lk-cam').classList.toggle('back', back);
+  $('lk-cam-msg').textContent = back
+    ? `폰 뒷면(카메라)이 나를 보게 세워 두세요. 몇 개인지는 소리로 알려 줘요${voice.enabled ? '' : ' — 지금은 소리가 꺼져 있어요'}`
+    : '카메라 켜는 중…';
   const { CameraCounter } = await import('./camera-counter.js');
   // 불러오는 사이 화면이 꺼졌거나 다른 방법으로 바꿨으면 켜지 않는다 (카메라는 보일 때만)
   if (!ui.visible || ui.done || ui.mode !== 'camera') return;
   if (!cam) {
     cam = new CameraCounter({
-      video: $('lk-video'), canvas: $('lk-skel'), exercise: camEx, gpu: st.gpu !== false,
+      video: $('lk-video'), canvas: $('lk-skel'), exercise: camEx, gpu: st.gpu !== false, camera: st.camera || null,
       onRep: (n) => onCount(n),
-      onStatus: (t) => { $('lk-cam-msg').textContent = t; },
+      onStatus: (t) => { if (!back || cam?.frames) $('lk-cam-msg').textContent = t; },
       onCue: (t) => { $('lk-cam-msg').textContent = t; },
+      onFrame,
     });
   }
   keepAwake(90);

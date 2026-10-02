@@ -177,6 +177,15 @@ const app = log('1 앱', await main.eval(`(async () => {
 })()`, 60000));
 check('app', app?.plugins?.includes('FitLock') && app?.info?.screen === 'app');
 
+// 참고: 카메라 목록 + 네이티브가 계산한 시야각 (카메라 고르기)
+const cams = log('1b 카메라 목록', await main.eval(`(async () => {
+  const native = await window.__fitlockApp.FitLock.listCameras();
+  const { cameraOptions } = await import('./js/camera-pick.js');
+  const opts = await cameraOptions();
+  return { native: native.cameras, options: opts.map((c) => ({ name: c.name, facing: c.facing, fovLong: c.fovLong && Math.round(c.fovLong), distance: c.distance, label: c.label })) };
+})()`, 60000));
+check('cameraFov', cams?.options?.length > 0 && cams.options.some((c) => c.fovLong > 30 && c.fovLong < 180), false);
+
 const enable = log('2 잠금 켜기', await main.eval(`(async () => {
   const s = JSON.parse(localStorage.getItem('fitlock.settings.v1') || '{}');
   s.lock = { ...(s.lock || {}), enabled: true, freeMinutes: 0, skipsPerDay: 3,

@@ -315,6 +315,7 @@ body.lock.theme-forest { --lk1: #1f5a3c; --lk2: #08160f; --lk-accent: #b6f27a; }
 .lk-cam video, .lk-cam canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .lk-cam video { transform: scaleX(-1); }
 .lk-cam canvas { transform: scaleX(-1); }
+.lk-cam.back video, .lk-cam.back canvas { transform: none; } /* 후면 카메라는 거울처럼 뒤집지 않는다 */
 .lk-cam .over {
   position: absolute; left: 0; right: 0; top: 0; padding: calc(14px + var(--safe-t)) 16px 12px;
   display: flex; align-items: center; justify-content: space-between;
@@ -336,3 +337,14 @@ body.lock.theme-forest { --lk1: #1f5a3c; --lk2: #08160f; --lk-accent: #b6f27a; }
 .lk-done li { margin: 3px 0; }
 .lk-done li b { color: var(--coin); }
 .lk-done .lvup { margin-top: 12px; font-weight: 900; color: var(--accent); font-size: 20px; }
+
+/* 카메라 고르기 */
+.cam-prev { position: relative; width: 100%; aspect-ratio: 3 / 4; max-height: 42vh; background: #000; border-radius: 14px; overflow: hidden; margin: 6px 0 10px; }
+.cam-prev video { width: 100%; height: 100%; object-fit: contain; }
+.cam-prev video.mirror { transform: scaleX(-1); }
+.cam-prev span { position: absolute; left: 8px; top: 8px; background: rgba(0, 0, 0, .6); padding: 3px 8px; border-radius: 8px; font-size: 13px; font-weight: 700; }
+.cam-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); }
+.cam-row:first-of-type { border-top: 0; }
+.cam-row.on .t { color: var(--accent); }
+.cam-row .t { font-weight: 800; }
+.cam-row .help { font-size: 13px; color: var(--muted); }

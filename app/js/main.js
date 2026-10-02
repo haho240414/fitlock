@@ -11,6 +11,8 @@ import {
 import { SENSOR_EXERCISES } from './motion/rep-sensor.js';
 import { listRecordings, exportRecordings, clearRecordings, setTruth } from './sensorlog.js';
 import { EXERCISE_BY_ID } from './engine/exercises.js';
+import { openCamera } from './camera.js';
+import { cameraOptions, autoCamera, toSetting, describe } from './camera-pick.js';
 
 const CAM_EXERCISES = ['squat', 'pushup', 'lunge', 'jumpingjack', 'burpee', 'climber', 'situp', 'bridge', 'sidelunge', 'press', 'curl', 'highknees']
   .filter((id) => EXERCISE_BY_ID[id]);
@@ -237,6 +239,8 @@ function renderSettings() {
     <div class="field"><div><div class="label">세는 방법</div><div class="help">${st.mode === 'sensor' ? '폰을 가슴에 대고 하면 센서로 세요' : '폰을 2~3m 앞에 세워 두면 카메라로 세요'}</div></div>
       <div class="seg"><button class="${st.mode === 'sensor' ? 'on' : ''}" data-action="mode" data-id="sensor">📱 폰 들고</button><button class="${st.mode === 'camera' ? 'on' : ''}" data-action="mode" data-id="camera">📷 카메라</button></div></div>
     <div class="field"><div><div class="label">운동</div></div>${exSeg}</div>
+    ${st.mode === 'camera' ? `<div class="field"><div><div class="label">카메라</div><div class="help">${esc(describe(st.camera))}</div></div>
+      <button class="btn sm" data-action="camera-pick">바꾸기</button></div>` : ''}
     <div class="field"><div><div class="label">목표 횟수</div></div>
       <div class="stepper"><button data-action="target" data-d="-1">−</button><output class="num">${st.target}</output><button data-action="target" data-d="1">+</button></div></div>
     <div class="field"><div><div class="label">한 번 하면 자유</div><div class="help">운동하고 나면 이 시간 동안은 그냥 열려요</div></div>
@@ -334,6 +338,96 @@ async function changeSettings(fn, { sync = true } = {}) {
   updateSettings(fn);
   render();
   if (sync) await syncNative();
+}
+
+/* ================= 카메라 고르기 ================= */
+
+let pickerList = [];
+let previewStream = null;
+function stopPreview() {
+  previewStream?.getTracks().forEach((t) => t.stop());
+  previewStream = null;
+}
+
+async function ensureCameraPermission() {
+  if (!FitLock) return true;
+  await refreshStatus();
+  if (status?.camera) return true;
+  const r = await FitLock.requestPermissions({ permissions: ['camera'] }).catch(() => null);
+  await refreshStatus();
+  return r?.camera === 'granted' || !!status?.camera;
+}
+
+/** 카메라 모드로 바꿀 때: 아직 고른 게 없으면 가장 넓은 전면 카메라로 (후면이 훨씬 넓으면 알려 준다) */
+async function autoPickCamera() {
+  if (loadSettings().camera) return;
+  if (!(await ensureCameraPermission())) return;
+  let list;
+  try { list = await cameraOptions(); } catch { return; }
+  const c = autoCamera(list);
+  if (!c) return;
+  await changeSettings((s) => { s.camera = { ...toSetting(c), auto: true }; });
+  const backWide = list.find((x) => x.facing === 'environment' && x.fovLong && c.fovLong && x.fovLong - c.fovLong > 15);
+  toast(backWide
+    ? `${describe(toSetting(c))} — 후면 ${Math.round(backWide.fovLong)}° 카메라는 더 가까이 둬도 돼요 ('바꾸기')`
+    : `${describe(toSetting(c))}`, 5000);
+}
+
+async function openCameraPicker() {
+  if (!(await ensureCameraPermission())) { toast('카메라 권한이 있어야 고를 수 있어요'); return; }
+  toast('카메라를 살펴보는 중…', 3000);
+  try { pickerList = await cameraOptions(); } catch { toast('카메라 목록을 못 읽었어요'); return; }
+  if (!pickerList.length) { toast('쓸 수 있는 카메라가 없어요'); return; }
+  const cur = loadSettings().camera?.deviceId;
+  const rows = pickerList.map((c) => `<div class="cam-row ${c.deviceId === cur ? 'on' : ''}">
+      <div class="grow"><div class="t">${esc(c.name)}${c.wide ? ' <span class="badge ok">넓음</span>' : ''}${c.deviceId === cur ? ' ✓' : ''}</div>
+        <div class="help">${c.fovLong ? `시야 ${Math.round(c.fovLong)}° · 폰을 허리 높이에 두면 약 ${c.distance}m` : '시야 정보 없음'}${c.facing === 'environment' ? ' · 화면이 반대쪽이라 소리로 세요' : ''}</div></div>
+      <button class="btn sm" data-action="cam-preview" data-id="${esc(c.deviceId)}">보기</button>
+      <button class="btn sm primary" data-action="cam-pick" data-id="${esc(c.deviceId)}">고르기</button></div>`).join('');
+  sheet({
+    title: '어느 카메라로 셀까요?',
+    html: `<p>시야가 넓을수록 가까이 둬도 전신이 들어와요. '보기'로 얼마나 넓게 보이는지 확인해 보세요.
+      (폰을 바닥에 두면 거리가 1.5~2배 필요해요 — 의자·선반처럼 허리 높이가 좋아요)</p>
+      <div class="cam-prev"><video id="cp-video" playsinline muted></video><span id="cp-label">'보기'를 누르세요</span></div>${rows}`,
+    actions: [
+      { label: '자동 (가장 넓은 전면)', onClick: () => pickCamera(null) },
+      { label: '닫기', cls: 'ghost' },
+    ],
+    onClose: stopPreview,
+  });
+}
+
+async function previewCamera(deviceId) {
+  stopPreview();
+  const c = pickerList.find((x) => x.deviceId === deviceId);
+  const v = document.getElementById('cp-video');
+  if (!v) return;
+  try {
+    const stream = await openCamera({ cameraWide: true, cameraId: deviceId });
+    if (!document.getElementById('cp-video')) { stream.getTracks().forEach((t) => t.stop()); return; } // 그사이 창이 닫힘
+    previewStream = stream;
+    v.srcObject = stream;
+    v.classList.toggle('mirror', c?.facing !== 'environment');
+    await v.play().catch(() => {});
+    document.getElementById('cp-label').textContent = describe(toSetting(c));
+  } catch {
+    toast('이 카메라는 지금 열 수 없어요');
+  }
+}
+
+async function pickCamera(deviceId) {
+  stopPreview();
+  const c = deviceId ? pickerList.find((x) => x.deviceId === deviceId) : autoCamera(pickerList);
+  document.querySelector('.sheet-back')?._close?.();
+  await changeSettings((s) => { s.camera = c ? { ...toSetting(c), auto: !deviceId } : null; });
+  if (c?.facing === 'environment') {
+    sheet({
+      title: '후면 카메라로 할 때',
+      html: `<p>폰 <b>뒷면(카메라)이 나를 보게</b> 세워 두세요. 화면은 반대쪽이라 몇 개 했는지는 <b>소리</b>로 알려 줘요.</p>
+        <p class="small">무음·진동 모드면 소리가 안 나요. 잠금 화면 아래 버튼('급할 때 그냥 열기')은 그대로 있어요.</p>`,
+      actions: [{ label: '알겠어요', cls: 'primary' }],
+    });
+  } else toast(`카메라: ${describe(toSetting(c))}`);
 }
 
 /* ================= 잠금 켜기(권한 안내) ================= */
@@ -511,8 +605,11 @@ async function onAction(el) {
       return changeSettings((s) => { s.lock.enabled = false; });
     case 'mode':
       await changeSettings((s) => { s.mode = id; });
-      if (id === 'camera' && FitLock && status && !status.camera) await permAction('perm-camera');
+      if (id === 'camera') await autoPickCamera();
       return;
+    case 'camera-pick': return openCameraPicker();
+    case 'cam-preview': return previewCamera(id);
+    case 'cam-pick': return pickCamera(id);
     case 'exercise': return changeSettings((s) => { s.exercise = id; });
     case 'target': return changeSettings((s) => { s.target = Math.max(3, Math.min(50, s.target + Number(el.dataset.d))); });
     case 'skips': return changeSettings((s) => { s.lock.skipsPerDay = Math.max(0, Math.min(5, s.lock.skipsPerDay + Number(el.dataset.d))); });
@@ -615,7 +712,7 @@ async function init() {
     NativeApp.addListener('resume', () => refreshAll());
     NativeApp.addListener('backButton', () => {
       const open = document.querySelector('.sheet-back');
-      if (open) { open.remove(); return; }
+      if (open) { (open._close || (() => open.remove()))(); return; }
       if (tab !== 'home') { go('home'); return; }
       NativeApp.minimizeApp?.().catch(() => NativeApp.exitApp());
     });

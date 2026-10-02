@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS = {
   mode: 'sensor',        // 세는 방법: sensor(폰 들고) | camera(세워 두고)
   exercise: 'squat',     // 폰 들고 할 운동: squat | lunge
   camExercise: 'squat',  // 카메라로 할 운동 (핸즈프리 PT 엔진의 운동 id)
+  camera: null,          // 고른 카메라 {deviceId, facing, name, fovLong, distance, auto} — null 이면 전면 기본
   target: 10,            // 목표 횟수
   voice: true,           // 숫자 음성 (무음·진동 모드면 자동으로 안 함)
   vibrate: true,
