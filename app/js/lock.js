@@ -372,19 +372,18 @@ async function init() {
   $('lk-mode-sensor').addEventListener('click', () => switchMode('sensor'));
   $('lk-mode-camera').addEventListener('click', () => switchMode('camera'));
   $('lk-cam-back').addEventListener('click', () => switchMode('sensor'));
-  $('lk-done-close').addEventListener('click', () => location.reload());
+  $('lk-done-close').addEventListener('click', () => location.replace('index.html#home'));
   $('lk-web-close').addEventListener('click', () => {
     stopCounting();
     saveLog('quit');
-    if (ui.kind === 'practice') location.replace('index.html#home');
-    else location.reload();
+    location.replace('index.html#home');
   });
   $('lk-web-skip').addEventListener('click', () => { // 브라우저 미리 보기용 (실제 잠금에선 네이티브 버튼)
     stopCounting();
     saveLog('skip');
     const r = updateState((s) => recordSkip(s, { reason: 'button', freeLimit: st.lock.skipsPerDay }));
     toast(r.free ? '건너뛰었어요 (기록 손해 없음)' : '건너뛰었어요 — 기록에 남아요');
-    setTimeout(() => location.reload(), 1200);
+    setTimeout(() => location.replace('index.html#home'), 1200);
   });
 
   window.addEventListener('pagehide', () => { stopCounting(); if (!ui.done) saveLog('leave'); });
