@@ -19,6 +19,11 @@ const CAM_EXERCISES = ['squat', 'pushup', 'lunge', 'jumpingjack', 'burpee', 'cli
   .filter((id) => EXERCISE_BY_ID[id]);
 const FREE_OPTIONS = [[0, '매번'], [15, '15분'], [30, '30분'], [60, '1시간'], [120, '2시간'], [180, '3시간'], [-1, '하루 한 번']];
 const DAY_NAMES = ['', '월', '화', '수', '목', '금', '토', '일']; // 1=월 … 7=일 (네이티브와 같게)
+const TAB_IDS = ['home', 'missions', 'records', 'settings'];
+const tabFromHash = () => {
+  const id = location.hash.slice(1);
+  return TAB_IDS.includes(id) ? id : 'home';
+};
 
 let tab = 'home';
 let status = null;   // 네이티브 상태 (FitLock.getStatus)
@@ -348,8 +353,8 @@ function render() {
 }
 
 function go(t) {
-  tab = t;
-  if (location.hash !== `#${t}`) history.replaceState(null, '', `#${t}`);
+  tab = TAB_IDS.includes(t) ? t : 'home';
+  if (location.hash !== `#${tab}`) history.replaceState(null, '', `#${tab}`);
   render();
   window.scrollTo(0, 0);
   $('view').focus({ preventScroll: true });
@@ -686,7 +691,7 @@ document.addEventListener('click', (e) => {
   const t = e.target.closest('[data-tab]');
   if (t) { go(t.dataset.tab); return; }
   const g = e.target.closest('[data-tab-go]');
-  if (g) { go(g.dataset.tabGo); return; }
+  if (g) { e.preventDefault(); go(g.dataset.tabGo); return; }
   const s = e.target.closest('[data-setup]');
   if (s) { permAction(s.dataset.setup); return; }
   const a = e.target.closest('[data-action]');
@@ -730,7 +735,7 @@ async function refreshAll() {
 }
 
 async function init() {
-  tab = (location.hash || '#home').slice(1) || 'home';
+  tab = tabFromHash();
   render();
   if (FitLock) {
     try { info = await FitLock.getInfo(); } catch { info = null; }
@@ -749,6 +754,11 @@ async function init() {
   }
   setInterval(() => { if (tab === 'home' && document.visibilityState === 'visible') refreshStatus().then(render); }, 30000);
 }
+
+window.addEventListener('hashchange', () => {
+  const next = tabFromHash();
+  if (next !== tab) go(next);
+});
 
 window.__fitlockApp = { refreshAll, syncNative, status: () => status, info: () => info, openSetup, go, FitLock };
 
