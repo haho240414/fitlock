@@ -51,11 +51,21 @@ function focus() {
 }
 const state = () => ({ ...lockState(), focus: focus() });
 
-/** 화면 끄기 → (꺼진 동안 운동 화면이 미리 떠야) → 켜기 */
-async function cycle(name) {
+/**
+ * 화면 끄기 → (꺼진 동안 운동 화면이 미리 떠야) → 켜기.
+ * 에뮬레이터는 화면 꺼짐 방송이 3~5초 늦게 오기도 해서(API 34·36 실측) 정해진 시간 대신 뜰 때까지 기다린다(최대 expectMs).
+ */
+async function cycle(name, { expectLock = true, expectMs = 10000 } = {}) {
   sh('input keyevent 223');
-  await sleep(3500);
-  const off = lockState();
+  const t0 = Date.now();
+  let off = lockState();
+  while (expectLock && !off.lockAlive && Date.now() - t0 < expectMs) {
+    await sleep(500);
+    off = lockState();
+  }
+  if (!expectLock) await sleep(3000);
+  off.waitedMs = Date.now() - t0;
+  await sleep(800);
   sh('input keyevent 224');
   await sleep(2500);
   const on = state();
@@ -152,6 +162,10 @@ const NONE = { eval: async () => ({ error: '페이지 없음' }), close() {} };
 
 let main = (await connect(isMain, 60000)) || NONE;
 const app = log('1 앱', await main.eval(`(async () => {
+  // 느린 에뮬레이터(API 36)에선 앱 스크립트가 늦게 뜬다 → 준비될 때까지
+  for (let i = 0; i < 60 && !(window.__fitlockApp?.FitLock && document.getElementById('view')?.innerText); i++) {
+    await new Promise((r) => setTimeout(r, 500));
+  }
   const F = window.__fitlockApp?.FitLock;
   return {
     url: location.href, platform: Capacitor.getPlatform(),
@@ -160,7 +174,7 @@ const app = log('1 앱', await main.eval(`(async () => {
     webview: (navigator.userAgent.match(/Chrome\\/([\\d.]+)/) || [])[1],
     home: document.getElementById('view')?.innerText.slice(0, 120),
   };
-})()`));
+})()`, 60000));
 check('app', app?.plugins?.includes('FitLock') && app?.info?.screen === 'app');
 
 const enable = log('2 잠금 켜기', await main.eval(`(async () => {
