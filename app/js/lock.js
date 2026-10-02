@@ -5,6 +5,7 @@
 // 지킬 것: 센서·카메라를 못 쓰면 바로 열어 준다. 센서·카메라는 화면이 보일 때만 켠다. 전화가 오면 네이티브가 비켜 준다.
 
 import { $, fmt, hhmm, dateLabel, toast, coinBurst } from './ui.js';
+import { mountIcons } from './icons.js';
 import { FitLock, buzz } from './native.js';
 import { loadSettings, loadState, updateState } from './store.js';
 import { recordSession, recordSkip, recordPass, levelInfo, streakInfo, todaySummary, summaryOf } from './rewards.js';
@@ -68,11 +69,16 @@ function renderGoal() {
   $('lk-cam-ex').textContent = exName();
   $('lk-mode-sensor').classList.toggle('on', ui.mode === 'sensor');
   $('lk-mode-camera').classList.toggle('on', ui.mode === 'camera');
+  $('lk-mode-sensor').setAttribute('aria-pressed', String(ui.mode === 'sensor'));
+  $('lk-mode-camera').setAttribute('aria-pressed', String(ui.mode === 'camera'));
   $('lk-meter-box').hidden = ui.mode !== 'sensor';
   $('lk-hint').textContent = ui.mode === 'sensor' ? SENSOR_EXERCISES[sensorEx].hint : '폰을 세워 두고 2~3m 뒤로 가서 하세요';
   $('lk-hint').classList.remove('strong');
   stopDemo?.();
-  stopDemo = playDemo($('lk-demo'), exId(), { color: '#c8f53c' });
+  // Keep the exercise demonstration available to existing code without animating a hidden canvas.
+  if (getComputedStyle($('lk-demo')).display !== 'none') {
+    stopDemo = playDemo($('lk-demo'), exId(), { color: getComputedStyle(document.body).getPropertyValue('--lk-accent').trim() });
+  }
   const prog = $('lk-prog');
   prog.style.strokeDasharray = `${C}`;
   setRing();
@@ -267,16 +273,19 @@ async function complete() {
 
 function showDone(res) {
   $('lk-cam').hidden = true;
+  $('lk').inert = true;
+  $('lk').setAttribute('aria-hidden', 'true');
   $('lk-done').hidden = false;
   $('lk-done-title').textContent = ui.kind === 'lock' ? '열렸어요!' : '잘했어요!';
   $('lk-done-total').textContent = `+${fmt(res.total)}P`;
   $('lk-done-list').innerHTML = res.gains.map((g) => `<li>${g.label} <b>+${g.pts}P</b></li>`).join('')
-    + (res.streak?.extended ? `<li>🔥 연속 ${res.streak.count}일째</li>` : '');
+    + (res.streak?.extended ? `<li>연속 ${res.streak.count}일째</li>` : '');
   if (res.levelUp) {
     $('lk-done-lvup').hidden = false;
-    $('lk-done-lvup').textContent = `🎉 레벨 업! Lv.${res.levelUp.to} ${levelInfo(loadState().earned).title}`;
+    $('lk-done-lvup').textContent = `레벨 업! Lv.${res.levelUp.to} ${levelInfo(loadState().earned).title}`;
   }
   renderHeader();
+  $('lk-done').focus();
   coinBurst($('lk-done-total'), $('lk-points'), Math.min(14, 4 + Math.round(res.total / 5)));
 }
 
@@ -415,4 +424,5 @@ window.__fitlock = {
   switchMode,
 };
 
+mountIcons();
 init();

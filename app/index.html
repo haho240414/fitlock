@@ -3,23 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0b0e1a">
+  <meta name="theme-color" content="#f5f7f4">
   <title>핏락</title>
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
   <main class="app">
     <header class="app-top">
-      <div class="logo">핏<span>락</span></div>
+      <a class="logo" href="#home" data-tab-go="home" aria-label="핏락 홈"><span class="brand-mark" data-icon="brand"></span>핏락</a>
       <span class="chip lv" id="top-level">Lv.<b>1</b></span>
     </header>
-    <div id="view"></div>
+    <div id="view" tabindex="-1"></div>
   </main>
   <nav class="tabs" aria-label="화면">
-    <button data-tab="home"><span>🏠</span>홈</button>
-    <button data-tab="missions"><span>🎯</span>미션</button>
-    <button data-tab="records"><span>📊</span>기록</button>
-    <button data-tab="settings"><span>⚙️</span>설정</button>
+    <button data-tab="home"><span data-icon="home"></span>홈</button>
+    <button data-tab="missions"><span data-icon="target"></span>미션</button>
+    <button data-tab="records"><span data-icon="chart"></span>기록</button>
+    <button data-tab="settings"><span data-icon="settings"></span>설정</button>
   </nav>
   <input type="file" id="import-file" accept="application/json,.json" hidden>
   <script type="module" src="js/main.js"></script>

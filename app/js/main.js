@@ -2,6 +2,7 @@
 // 잠금 자체는 네이티브(LockService·LockActivity)가 하고, 이 화면은 설정을 네이티브에 넘긴다(FitLock.setConfig).
 
 import { $, fmt, hhmm, toast, sheet, coinBurst, esc } from './ui.js';
+import { icon, mountIcons } from './icons.js';
 import { FitLock, NativeApp, canShareFile, shareTextFile, downloadText } from './native.js';
 import { loadSettings, updateSettings, loadState, updateState, onExternalChange, exportAll, importAll, resetAll } from './store.js';
 import {
@@ -76,13 +77,13 @@ function lockCardHtml() {
   const left = skipsLeft(s, st.lock.skipsPerDay);
   const today = todaySummary(s);
   if (!FitLock) {
-    return `<section class="card lockcard"><div class="state">🔒 잠금 미리 보기</div>
-      <div class="why">잠금화면은 안드로이드 앱에서 켜져요. 여기선 운동 화면만 해 볼 수 있어요.</div></section>`;
+    return `<section class="lockcard status-row">${icon('lock')}<div class="grow"><div class="state">잠금 미리 보기</div>
+      <div class="why">잠금 기능은 안드로이드 앱에서 켤 수 있어요.</div></div></section>`;
   }
   if (!st.lock.enabled) {
-    return `<section class="card lockcard"><div class="row between"><div>
-      <div class="state">🔓 잠금 꺼짐</div><div class="why">켜면 화면을 켤 때마다 ${esc(exNameOf(st))} ${st.target}개를 해야 열려요</div></div>
-      <button class="btn primary sm" data-action="setup">켜기</button></div></section>`;
+    return `<section class="lockcard status-row">${icon('unlock')}<div class="grow">
+      <div class="state">운동 잠금이 꺼져 있어요</div><div class="why">${esc(exNameOf(st))} ${st.target}개로 만드는 작은 습관</div></div>
+      <button class="btn primary sm" data-action="setup">켜기</button></section>`;
   }
   const warns = [];
   if (status && !status.overlay) warns.push("'다른 앱 위에 표시'가 꺼져 있어 잠금이 안 떠요");
@@ -95,56 +96,54 @@ function lockCardHtml() {
   else if (d?.reason === 'place') why = '정한 장소가 아니라 잠금 쉬는 중이에요';
   else if (d?.reason === 'place-unknown') why = '위치를 몰라서 잠금 쉬는 중이에요 (모르면 열어 둬요)';
   return `<section class="card lockcard">
-    <div class="row between"><div class="state">🔒 잠금 켜짐</div><span class="badge ${warns.length ? 'warn' : 'ok'}">${warns.length ? '확인 필요' : '정상'}</span></div>
+    <div class="row between"><div class="state">${icon('lock')} 운동 잠금 켜짐</div><span class="badge ${warns.length ? 'warn' : 'ok'}">${warns.length ? '확인 필요' : '정상'}</span></div>
     <div class="why">${why}</div>
     <div class="why">오늘 건너뛰기 ${today.skips}번 · 기록 손해 없이 ${left}번 더 가능</div>
-    ${warns.map((w) => `<div class="warn">⚠️ ${esc(w)}</div>`).join('')}
+    ${warns.map((w) => `<div class="warn">${esc(w)}</div>`).join('')}
     ${warns.length ? '<button class="btn sm" style="margin-top:10px" data-action="setup">고치기</button>' : ''}
     ${d?.reason === 'free' ? '<button class="btn ghost sm" style="margin-top:8px" data-action="relock">자유 시간 끝내고 다시 잠그기</button>' : ''}
   </section>`;
 }
 
 function missionRowHtml(m) {
-  const icons = { reps30: '💪', reps60: '💪', reps100: '🏋️', unlock3: '🔓', unlock5: '🔓', morning: '🌅', noskip: '🙅', extra: '➕', camera: '📷', practice: '🏃' };
+  const icons = { reps30: 'target', reps60: 'target', reps100: 'workout', unlock3: 'unlock', unlock5: 'unlock', morning: 'sun', noskip: 'shield', extra: 'plus', camera: 'camera', practice: 'chart' };
+  const titles = { reps30: '30개 운동하기', reps60: '60개 운동하기', reps100: '100개 운동하기', unlock3: '잠금 3번 열기', unlock5: '잠금 5번 열기', morning: '아침 9시 전 운동', noskip: '건너뛰기 없이 잠금 2번 열기', extra: '목표보다 5개 더 하기', camera: '카메라로 1번 운동', practice: '연습 운동 1번' };
   const pct = Math.round((m.progress / m.goal) * 100);
   const btn = m.claimed ? '<span class="badge off">받음</span>'
     : m.done ? `<button class="btn coin sm" data-action="claim" data-id="${m.id}">+${m.reward}P 받기</button>`
       : m.failed ? '<span class="badge bad">실패</span>' : `<span class="muted small">+${m.reward}P</span>`;
   return `<div class="mission ${m.claimed ? 'claimed' : ''} ${m.failed ? 'failed' : ''}">
-    <div class="ic">${icons[m.id] || '🎯'}</div>
-    <div class="grow"><div class="t">${esc(m.title)}</div>
-      <div class="row small muted"><span class="num">${m.progress}/${m.goal}</span></div>
-      <div class="bar coin"><i style="width:${pct}%"></i></div></div>
+    <div class="ic">${icon(icons[m.id] || 'target')}</div>
+    <div class="grow"><div class="t" title="${esc(m.title)}">${esc(titles[m.id] || m.title)}</div>
+      <div class="mission-progress"><span class="num">${m.progress} / ${m.goal}</span>
+      <div class="bar coin" role="progressbar" aria-label="${esc(m.title)}" aria-valuenow="${m.progress}" aria-valuemin="0" aria-valuemax="${m.goal}"><i style="width:${pct}%"></i></div></div></div>
     ${btn}</div>`;
 }
 
 function renderHome() {
   const s = loadState();
+  const st = loadSettings();
   const lv = levelInfo(s.earned);
   const sk = streakInfo(s);
   const today = todaySummary(s);
   const week = weekDots(s);
   const ms = missionsFor(s);
-  return `
-  <section class="card hero">
-    <div class="muted small">내 포인트</div>
-    <div class="pts num"><span id="h-points">${fmt(s.points)}</span><small>P</small></div>
-    <div class="today">오늘 +${fmt(today.pts)}P · ${fmt(today.reps)}개 운동</div>
-    <div class="lvline"><span>Lv.${lv.level} ${esc(lv.title)}</span><span>Lv.${lv.level + 1}까지 ${fmt(lv.toNext)}P</span></div>
-    <div class="bar coin"><i style="width:${Math.round(lv.frac * 100)}%"></i></div>
-  </section>
-  <section class="card">
-    <div class="row between"><h2 style="margin:0">🔥 ${sk.count}일 연속${sk.atRisk ? ' <span class="badge warn">오늘 하면 이어져요</span>' : ''}</h2>
-      <span class="muted small">최고 ${sk.best}일${s.inv.freezes ? ` · 보호권 ${s.inv.freezes}장` : ''}</span></div>
-    <div class="week">${week.map((d) => `<div>${d.label}<i class="${d.done ? 'done' : d.frozen ? 'frozen' : ''} ${d.today ? 'today' : ''}">${d.done ? '✓' : d.frozen ? '❄' : ''}</i></div>`).join('')}</div>
+  return `<section class="greeting"><h1>가벼운 움직임,<br>좋은 하루의 시작.</h1><p>오늘도 나를 위한 1분을 만들어 보세요.</p></section>
+  <section class="card workout-card" aria-label="오늘의 운동">
+    <div class="row between"><h2>오늘의 운동</h2><span class="mode-label">${icon(st.mode === 'camera' ? 'camera' : 'phone')}${st.mode === 'camera' ? '카메라' : '폰 들고'}</span></div>
+    <div class="workout-summary"><div><h3>${esc(exNameOf(st))}</h3><div class="workout-target num">${st.target}<small>회</small></div></div>
+      <div class="mini-ring" aria-label="한 번의 운동 목표 ${st.target}회"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="43"/><circle class="start" cx="50" cy="50" r="43"/></svg><span class="num"><b>0</b> / ${st.target}</span></div></div>
+    <p class="workout-help">${st.mode === 'camera' ? '폰을 세워 두고 전신이 보이게 서 주세요.' : '폰을 가슴에 대고 앉았다 일어나세요.'}</p>
+    <button class="btn primary block workout-start" data-action="practice">지금 운동하기 ${icon('arrow')}</button>
+    <button class="btn block workout-preview" data-action="preview">${icon('lock')} 잠금화면 미리 보기</button>
   </section>
   ${lockCardHtml()}
-  <div class="big-actions">
-    <button class="btn primary" data-action="practice">💪 지금 운동하기<small>하는 만큼 포인트</small></button>
-    <button class="btn" data-action="preview">🔒 잠금화면 보기<small>미리 해 보기</small></button>
-  </div>
-  <section class="card"><div class="row between"><h2 style="margin:0">오늘의 미션</h2><button class="btn ghost sm" data-tab-go="missions">전체 ›</button></div>
-    ${ms.map(missionRowHtml).join('')}</section>`;
+  <section class="card home-metrics" aria-label="포인트와 연속 기록">
+    <div><div class="metric-label">내 포인트</div><div class="metric-value num"><span id="h-points">${fmt(s.points)}</span><small>P</small></div><p>오늘 <b>+${fmt(today.pts)}P</b></p></div>
+    <div><div class="metric-label">연속 기록</div><div class="metric-value num">${sk.count}<small>일</small></div><p>최고 ${sk.best}일${sk.atRisk ? ' · 오늘 이어가세요' : ''}${s.inv.freezes ? ` · 보호권 ${s.inv.freezes}장` : ''}</p></div>
+  </section>
+  <section class="card week-card" aria-label="이번 주 운동 기록"><h2>이번 주</h2><div class="week">${week.map((d) => `<div aria-label="${d.label}요일${d.today ? ', 오늘' : ''}: ${d.done ? '운동 완료' : d.frozen ? '보호권 사용' : '운동 전'}">${d.label}<i class="${d.done ? 'done' : d.frozen ? 'frozen' : ''} ${d.today ? 'today' : ''}">${d.done ? icon('check') : d.frozen ? icon('shield') : ''}</i></div>`).join('')}</div></section>
+  <section class="home-missions"><div class="section-heading"><h2>오늘의 미션</h2><button class="btn ghost sm" data-tab-go="missions">전체 보기 ${icon('arrow')}</button></div><div class="card mission-list">${ms.map(missionRowHtml).join('')}</div></section>`;
 }
 
 /* ================= 미션·상점 ================= */
@@ -165,12 +164,13 @@ function renderMissions() {
   const themes = s.inv.themes.map((th) => `<button class="${s.inv.theme === th ? 'on' : ''}" data-action="theme" data-id="${th}">${THEMES[th] || th}</button>`).join('');
   const ladder = Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
     const t = levelInfo(levelThreshold(n)).title;
-    return `<div class="logrow"><span>${n <= lv.level ? '✅' : '⬜'} Lv.${n} ${esc(t)}</span><span class="muted num">${fmt(levelThreshold(n))}P</span></div>`;
+    return `<div class="logrow"><span>${icon(n <= lv.level ? 'check' : 'lock')} Lv.${n} ${esc(t)}</span><span class="muted num">${fmt(levelThreshold(n))}P</span></div>`;
   }).join('');
   return `
+  <div class="page-intro"><h1>작은 성취, 쌓이는 즐거움.</h1><p>오늘의 미션을 채우고 나만의 보상을 만나세요.</p></div>
   <section class="card"><h2>오늘의 미션</h2><p class="small muted" style="margin:-4px 0 6px">날마다 바뀌어요. 다 하면 포인트를 받으세요.</p>
     ${missionsFor(s).map(missionRowHtml).join('')}</section>
-  <section class="card"><div class="row between"><h2 style="margin:0">상점</h2><span class="chip coin">🪙 <b>${fmt(s.points)}</b>P</span></div>
+  <section class="card"><div class="row between"><h2 style="margin:0">상점</h2><span class="chip coin">${icon('coin')} <b>${fmt(s.points)}</b>P</span></div>
     <p class="small muted">포인트는 앱 안에서만 써요 (현금·기프티콘 아님)</p>${items}</section>
   <section class="card"><h2>잠금화면 테마</h2><div class="seg">${themes}</div></section>
   <section class="card"><h2>레벨</h2><p class="small muted" style="margin:-4px 0 6px">지금까지 모은 포인트로 올라가요 (써도 안 내려가요)</p>${ladder}</section>`;
@@ -185,7 +185,7 @@ function renderRecords() {
   const max = Math.max(10, ...days.map((d) => d.reps));
   const today = days[days.length - 1].key;
   const chart = days.map((d) => `<div class="${d.key === today ? 'today' : ''}" title="${d.key} ${d.reps}개"><i style="height:${Math.round((d.reps / max) * 100)}%"></i>${Number(d.key.slice(8))}</div>`).join('');
-  const kindLabel = { unlock: '🔓 잠금 해제', practice: '💪 운동', skip: '⏭️ 건너뜀', pass: '↪️ 그냥 열림', mission: '🎯 미션', buy: '🛒 구매' };
+  const kindLabel = { unlock: '잠금 해제', practice: '운동', skip: '건너뜀', pass: '그냥 열림', mission: '미션', buy: '구매' };
   const passWhy = { call: '전화', 'no-sensor': '센서 없음', 'no-camera': '카메라 못 씀', error: '앱 오류', watchdog: '화면 오류', home: '홈 버튼' };
   const log = [...s.log].reverse().slice(0, 40).map((l) => {
     const d = new Date(l.at);
@@ -195,8 +195,9 @@ function renderRecords() {
     if (l.kind === 'pass') what += ` (${passWhy[l.reason] || l.reason})`;
     if (l.kind === 'buy') what += ` · ${SHOP.find((x) => x.id === l.id)?.name || l.id}`;
     return `<div class="logrow"><span>${d.getMonth() + 1}/${d.getDate()} ${hhmm(l.at)} ${esc(what)}</span><span class="num ${l.pts > 0 ? '' : 'muted'}">${l.pts > 0 ? '+' : ''}${l.pts || 0}P</span></div>`;
-  }).join('') || '<p class="muted">아직 기록이 없어요</p>';
+  }).join('') || `<div class="empty-state">${icon('chart')}<p>첫 움직임을 기다리고 있어요.</p><p class="small">운동을 시작하면 여기에 기록이 쌓여요.</p></div>`;
   return `
+  <div class="page-intro"><h1>꾸준함이 만드는 변화.</h1><p>하루의 움직임이 나만의 기록이 돼요.</p></div>
   <section class="card"><div class="stats">
     <div class="stat"><b class="num">${fmt(t.reps)}</b><span>지금까지 한 개수</span></div>
     <div class="stat"><b class="num">${fmt(t.unlocks)}</b><span>운동으로 연 잠금</span></div>
@@ -233,11 +234,12 @@ function renderSettings() {
   const sdk = info?.sdk || 0;
   const recs = listRecordings();
   return `
-  <section class="card"><h2>잠금</h2>
+  <div class="page-intro"><h1>내 일상에 맞게.</h1><p>운동과 잠금 방식을 편안하게 조절하세요.</p></div>
+  <section class="card"><h2>운동 잠금</h2>
     <div class="field"><div><div class="label">잠금 켜기</div><div class="help">화면을 켜면 운동 화면이 먼저 떠요</div></div>
       <label class="switch"><input type="checkbox" data-action="lock-toggle" ${L.enabled ? 'checked' : ''}><i></i></label></div>
-    <div class="field"><div><div class="label">세는 방법</div><div class="help">${st.mode === 'sensor' ? '폰을 가슴에 대고 하면 센서로 세요' : '폰을 2~3m 앞에 세워 두면 카메라로 세요'}</div></div>
-      <div class="seg"><button class="${st.mode === 'sensor' ? 'on' : ''}" data-action="mode" data-id="sensor">📱 폰 들고</button><button class="${st.mode === 'camera' ? 'on' : ''}" data-action="mode" data-id="camera">📷 카메라</button></div></div>
+    <div class="field mode-field"><div><div class="label">세는 방법</div><div class="help">${st.mode === 'sensor' ? '폰을 가슴에 대고 하면 센서로 세요' : '폰을 2~3m 앞에 세워 두면 카메라로 세요'}</div></div>
+      <div class="seg"><button class="${st.mode === 'sensor' ? 'on' : ''}" data-action="mode" data-id="sensor">${icon('phone')} 폰 들고</button><button class="${st.mode === 'camera' ? 'on' : ''}" data-action="mode" data-id="camera">${icon('camera')} 카메라</button></div></div>
     <div class="field"><div><div class="label">운동</div></div>${exSeg}</div>
     ${st.mode === 'camera' ? `<div class="field"><div><div class="label">카메라</div><div class="help">${esc(describe(st.camera))}</div></div>
       <button class="btn sm" data-action="camera-pick">바꾸기</button></div>` : ''}
@@ -257,7 +259,7 @@ function renderSettings() {
   <section class="card"><div class="row between"><h2 style="margin:0">장소</h2>${sw('lock.places.enabled', L.places.enabled)}</div>
     <p class="small muted">집처럼 정한 곳에서만 잠그거나, 정한 곳에선 안 잠글 수 있어요. 위치는 이 폰 안에서만 써요.</p>
     ${L.places.enabled ? `<div class="seg" style="margin:6px 0 4px"><button class="${L.places.mode === 'only' ? 'on' : ''}" data-action="place-mode" data-id="only">이곳에서만 잠금</button><button class="${L.places.mode === 'except' ? 'on' : ''}" data-action="place-mode" data-id="except">이곳에선 잠금 안 함</button></div>
-      ${places}<button class="btn sm" data-action="place-add" style="margin-top:8px" ${FitLock ? '' : 'disabled'}>📍 지금 있는 곳 추가</button>
+      ${places}<button class="btn sm" data-action="place-add" style="margin-top:8px" ${FitLock ? '' : 'disabled'}>${icon('pin')} 지금 있는 곳 추가</button>
       <p class="small dim">위치를 모를 땐(꺼짐·실내 등) 잠그지 않아요.</p>` : ''}
   </section>
 
@@ -310,12 +312,39 @@ function renderSettings() {
 /* ================= 그리기·전환 ================= */
 
 function render() {
+  const active = document.activeElement;
+  const focusData = active?.closest('#view') ? { ...active.dataset } : null;
   const s = loadState();
   const lv = levelInfo(s.earned);
   $('top-level').innerHTML = `Lv.<b>${lv.level}</b> ${esc(lv.title)}`;
   const views = { home: renderHome, missions: renderMissions, records: renderRecords, settings: renderSettings };
   $('view').innerHTML = (views[tab] || renderHome)();
-  for (const b of document.querySelectorAll('.tabs button')) b.classList.toggle('on', b.dataset.tab === tab);
+  document.body.dataset.view = tab;
+  for (const b of document.querySelectorAll('.tabs button')) {
+    b.classList.toggle('on', b.dataset.tab === tab);
+    if (b.dataset.tab === tab) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
+  }
+  mountIcons();
+  // Keep controls usable with keyboard and screen readers after a settings redraw.
+  for (const field of document.querySelectorAll('.field')) {
+    const label = field.querySelector('.label')?.textContent;
+    if (label) for (const input of field.querySelectorAll('input, select')) input.setAttribute('aria-label', label);
+  }
+  for (const input of document.querySelectorAll('.switch input:not([aria-label])')) {
+    const heading = input.closest('.card')?.querySelector('h2')?.textContent;
+    if (heading) input.setAttribute('aria-label', `${heading} 사용`);
+  }
+  for (const b of document.querySelectorAll('.seg button, .days button')) b.setAttribute('aria-pressed', String(b.classList.contains('on')));
+  for (const b of document.querySelectorAll('.stepper button')) {
+    const label = b.closest('.field')?.querySelector('.label')?.textContent || '횟수';
+    b.setAttribute('aria-label', `${label} ${Number(b.dataset.d) > 0 ? '늘리기' : '줄이기'}`);
+  }
+  for (const select of document.querySelectorAll('input[data-win]')) select.setAttribute('aria-label', `시간대 ${Number(select.dataset.win) + 1} ${select.dataset.k === 'start' ? '시작' : '종료'}`);
+  if (focusData && Object.keys(focusData).length) {
+    const replacement = [...$('view').querySelectorAll('button, input, select')].find((el) => Object.entries(focusData).every(([k, v]) => el.dataset[k] === v));
+    replacement?.focus({ preventScroll: true });
+  }
 }
 
 function go(t) {
@@ -323,6 +352,7 @@ function go(t) {
   if (location.hash !== `#${t}`) history.replaceState(null, '', `#${t}`);
   render();
   window.scrollTo(0, 0);
+  $('view').focus({ preventScroll: true });
 }
 
 /* ================= 설정 바꾸기 ================= */
@@ -481,7 +511,7 @@ async function openSetup() {
         await refreshStatus();
         render();
         sheet({
-          title: '잠금이 켜졌어요 🎉',
+          title: '잠금이 켜졌어요',
           html: '<p>화면을 껐다가 다시 켜 보세요. 운동 화면이 먼저 떠요.</p><p class="small">처음엔 \'잠금화면 보기\'로 미리 해 봐도 좋아요.</p>',
           actions: [{ label: '잠금화면 미리 보기', cls: 'primary', onClick: () => FitLock.previewLock().catch(() => {}) }, { label: '닫기', cls: 'ghost' }],
         });

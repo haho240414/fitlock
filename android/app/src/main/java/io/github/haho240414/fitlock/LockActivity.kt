@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
@@ -134,12 +133,12 @@ class LockActivity : BridgeActivity() {
         val root = findViewById<ViewGroup>(android.R.id.content) ?: return
         val b = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setBackgroundColor(0xE60B0E1A.toInt())
+            setBackgroundColor(0xFFF5F7F4.toInt())
             setPadding(dp(12), dp(8), dp(12), dp(12))
         }
-        val emergency = pill("🚨 긴급 전화", 0xFF3A1A22.toInt(), 0xFFFF8A95.toInt()) { emergencyCall() }
+        val emergency = pill("긴급 전화", 0xFFF8EDEA.toInt(), 0xFFA84D48.toInt()) { emergencyCall() }
         emergency.contentDescription = "긴급 전화 걸기"
-        val skip = pill(skipLabel(), 0xFF1C2240.toInt(), Color.WHITE) { skip("skip") }
+        val skip = pill(skipLabel(), 0xFFE7EFE9.toInt(), 0xFF245C48.toInt()) { skip("skip") }
         skip.contentDescription = "급할 때 운동 없이 그냥 열기"
         b.addView(emergency, LinearLayout.LayoutParams(0, dp(54), 1f).apply { marginEnd = dp(8) })
         b.addView(skip, LinearLayout.LayoutParams(0, dp(54), 1.6f))
@@ -404,7 +403,7 @@ class LockActivity : BridgeActivity() {
         const val EXTRA_REASON = "reason"
         const val REASON_PREVIEW = "preview"
         private const val WATCHDOG_MS = 12_000L
-        private val BG = 0xFF0B0E1A.toInt()
+        private val BG = 0xFFF5F7F4.toInt()
 
         @Volatile var alive = false
         @Volatile var showing = false
