@@ -294,7 +294,9 @@ function pass(reason, msg) {
   if (ui.done) return;
   ui.done = true;
   stopCounting();
-  updateState((s) => recordPass(s, { reason }));
+  // A desktop preview has no motion sensor. Keep the explanation visible without
+  // filling the user's history with preview-only failures or reloading in a loop.
+  if (ui.kind !== 'browser') updateState((s) => recordPass(s, { reason }));
   $('lk-hint').textContent = msg;
   $('lk-hint').classList.add('strong');
   toast(msg, 3000);
@@ -308,7 +310,6 @@ function finish(result, extra = {}) {
     location.replace('index.html#home');
   } else {
     $('lk-done-bar').hidden = result !== 'success';
-    if (result !== 'success') setTimeout(() => location.reload(), 1200);
   }
 }
 
