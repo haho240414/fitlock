@@ -121,6 +121,7 @@ function onCount(nInMode) {
   else if (left <= 0) extra = '완료!';
   voice.count(n, extra);
   if (n >= target) complete();
+  else scheduleHelp();
 }
 
 function startSensor() {
@@ -279,6 +280,23 @@ function finish(result, extra = {}) {
 
 /* ---------- 시작 ---------- */
 
+// 오래 안 세지면 도움말 (폰 들고 세기는 아직 실제 폰으로 맞추는 중이라)
+let helpTimers = [];
+function scheduleHelp() {
+  helpTimers.forEach(clearTimeout);
+  const at = ui.count;
+  helpTimers = [
+    setTimeout(() => {
+      if (ui.done || !ui.visible || ui.count !== at || ui.mode !== 'sensor') return;
+      flashHint('잘 안 세지나요? 폰을 가슴에 꼭 붙이고, 조금 더 깊고 또박또박 앉았다 일어나 보세요', 8000);
+    }, 25000),
+    setTimeout(() => {
+      if (ui.done || !ui.visible || ui.count !== at) return;
+      flashHint(ui.kind === 'lock' ? "그래도 안 되면 아래 '급할 때 그냥 열기'를 누르세요 — 설정에서 센서 기록을 보내 주시면 고칠게요" : '카메라(세워 두고)로 바꿔 봐도 돼요', 10000);
+    }, 45000),
+  ];
+}
+
 function setVisible(v) {
   if (v === ui.visible) return;
   ui.visible = v;
@@ -286,7 +304,9 @@ function setVisible(v) {
     tick();
     renderHeader();
     startCounting();
+    scheduleHelp();
   } else {
+    helpTimers.forEach(clearTimeout);
     stopCounting();
   }
 }
