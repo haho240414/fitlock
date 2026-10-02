@@ -8,14 +8,14 @@ import puppeteer from 'puppeteer-core';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const BG = '#f5f7f4';
+const BG = '#ffe457';
 
-// 웰니스 브랜드: 짙은 그린 자물쇠 안에 두 잎. 웹의 icons.js brand와 같은 모티프.
+// 노란 배경과 짙은 자물쇠 안에 두 잎. 웹의 icons.js brand와 같은 모티프.
 const mark = (scale = 1) => `
   <g transform="translate(256 256) scale(${scale}) translate(-256 -256)">
-    <path d="M176 232 V170 a80 80 0 0 1 160 0 V232" fill="none" stroke="#245c48" stroke-width="32" stroke-linecap="round"/>
-    <rect x="120" y="222" width="272" height="212" rx="56" fill="#245c48"/>
-    <path d="M256 371c-66 0-101-33-101-84 67 0 101 34 101 84Zm0 0c0-73 35-111 111-111 0 72-37 111-111 111Z" fill="#ffffff"/>
+    <path d="M176 232 V170 a80 80 0 0 1 160 0 V232" fill="none" stroke="#25282c" stroke-width="32" stroke-linecap="round"/>
+    <rect x="120" y="222" width="272" height="212" rx="56" fill="#25282c"/>
+    <path d="M256 371c-66 0-101-33-101-84 67 0 101 34 101 84Zm0 0c0-73 35-111 111-111 0 72-37 111-111 111Z" fill="#ffe457"/>
   </g>`;
 const bgFill = '';
 const svg = (w, h, body) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet">${body}</svg>`;

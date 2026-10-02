@@ -133,12 +133,12 @@ class LockActivity : BridgeActivity() {
         val root = findViewById<ViewGroup>(android.R.id.content) ?: return
         val b = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setBackgroundColor(0xFFF5F7F4.toInt())
+            setBackgroundColor(0xFFFFE457.toInt())
             setPadding(dp(12), dp(8), dp(12), dp(12))
         }
         val emergency = pill("긴급 전화", 0xFFF8EDEA.toInt(), 0xFFA84D48.toInt()) { emergencyCall() }
         emergency.contentDescription = "긴급 전화 걸기"
-        val skip = pill(skipLabel(), 0xFFE7EFE9.toInt(), 0xFF245C48.toInt()) { skip("skip") }
+        val skip = pill(skipLabel(), 0xFFFFFFFF.toInt(), 0xFF25282C.toInt()) { skip("skip") }
         skip.contentDescription = "급할 때 운동 없이 그냥 열기"
         b.addView(emergency, LinearLayout.LayoutParams(0, dp(54), 1f).apply { marginEnd = dp(8) })
         b.addView(skip, LinearLayout.LayoutParams(0, dp(54), 1.6f))
@@ -403,7 +403,7 @@ class LockActivity : BridgeActivity() {
         const val EXTRA_REASON = "reason"
         const val REASON_PREVIEW = "preview"
         private const val WATCHDOG_MS = 12_000L
-        private val BG = 0xFFF5F7F4.toInt()
+        private val BG = 0xFFFFE457.toInt()
 
         @Volatile var alive = false
         @Volatile var showing = false

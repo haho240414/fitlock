@@ -2,7 +2,7 @@
   "appId": "io.github.haho240414.fitlock",
   "appName": "핏락",
   "webDir": "app",
-  "backgroundColor": "#f5f7f4",
+  "backgroundColor": "#f6f6f7",
   "android": {
     "allowMixedContent": false
   },

@@ -21,14 +21,14 @@
     </style>
 
 
-    <!-- 잠금화면 위 운동 화면: 웹 화면과 같은 웰니스 배경(색 번쩍임 없게), 열고 닫을 때 움직임 없이 -->
+    <!-- 잠금화면 위 운동 화면: 웹 화면과 같은 노란 배경, 열고 닫을 때 움직임 없이 -->
     <style name="AppTheme.Lock" parent="AppTheme.NoActionBar">
-        <item name="android:windowBackground">@color/fitlock_bg</item>
+        <item name="android:windowBackground">@color/fitlock_yellow</item>
         <item name="android:windowAnimationStyle">@null</item>
     </style>
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
-        <item name="windowSplashScreenBackground">@color/fitlock_bg</item>
+        <item name="windowSplashScreenBackground">@color/fitlock_yellow</item>
     </style>
 </resources>
