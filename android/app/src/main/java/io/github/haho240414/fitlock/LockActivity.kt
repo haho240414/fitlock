@@ -36,7 +36,7 @@ import java.lang.ref.WeakReference
 
 /**
  * 잠금화면 '위에' 뜨는 운동 화면. 시스템 잠금(PIN·지문)을 바꾸지 않는다 — 그 위에 화면을 하나 더 띄울 뿐이다.
- * 웹 화면은 lock.html (같은 웹앱, 같은 저장소). 아래 버튼 줄('긴급 전화'·'급할 때 그냥 열기')은 네이티브라서
+ * 웹 화면은 lock.html (같은 웹앱, 같은 저장소). 아래 버튼 줄('긴급 전화'·'이번엔 건너뛰기')은 네이티브라서
  * 웹 화면이 멈추거나 죽어도 언제나 눌린다.
  *
  * 사람을 가두지 않기:
@@ -139,7 +139,7 @@ class LockActivity : BridgeActivity() {
         val emergency = pill("긴급 전화", 0xFFF8EDEA.toInt(), 0xFFA84D48.toInt()) { emergencyCall() }
         emergency.contentDescription = "긴급 전화 걸기"
         val skip = pill(skipLabel(), 0xFFFFFFFF.toInt(), 0xFF25282C.toInt()) { skip("skip") }
-        skip.contentDescription = "급할 때 운동 없이 그냥 열기"
+        skip.contentDescription = "이번 운동 건너뛰기"
         b.addView(emergency, LinearLayout.LayoutParams(0, dp(54), 1f).apply { marginEnd = dp(8) })
         b.addView(skip, LinearLayout.LayoutParams(0, dp(54), 1.6f))
         root.addView(b, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
@@ -157,7 +157,7 @@ class LockActivity : BridgeActivity() {
     private fun skipLabel(): String {
         if (reason == REASON_PREVIEW) return "닫기 (미리 보기)"
         val left = LockPrefs.freeSkipsLeft(this)
-        return if (left > 0) "급할 때 그냥 열기\n무료 ${left}번 남음" else "급할 때 그냥 열기\n(기록에 남아요)"
+        return if (left > 0) "이번엔 건너뛰기\n오늘 ${left}회 남음" else "이번엔 건너뛰기\n활동 기록에 남아요"
     }
 
     /** 웹 화면이 아래 버튼 줄에 가리지 않게 높이를 알려 준다 */
@@ -292,7 +292,7 @@ class LockActivity : BridgeActivity() {
         finishNow()
     }
 
-    /** 급할 때 그냥 열기 / 홈 버튼으로 나감. 운동 없이도 언제나 열린다 */
+    /** 이번엔 건너뛰기 / 홈 버튼으로 나감. 운동 없이도 언제나 열린다 */
     private fun skip(type: String) {
         if (closing) return
         Log.i(TAG, "close: skip type=$type")

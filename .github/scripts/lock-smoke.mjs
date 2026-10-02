@@ -1,7 +1,7 @@
 // 에뮬레이터에서 잠금 흐름을 실제처럼 점검한다 (디버그 APK — WebView 에 크롬 개발자 도구 프로토콜로 붙는다).
 //  1 앱 실행·플러그인  2 잠금 켜기(서비스)  3 PIN 설정 → 화면 끄기·켜기 → 잠금화면 위 운동 화면
 //  4 잠금 화면에 센서 값이 들어오나  5 가짜 스쿼트 → 열림 → 시스템 잠금(PIN)은 그대로 → PIN 으로 풀기  6 포인트
-//  7 '급할 때 그냥 열기'(네이티브 버튼)  8 전화가 오면 비키기  9 카메라 모드(참고)  10 긴급 전화(참고)
+//  7 '이번엔 건너뛰기'(네이티브 버튼)  8 전화가 오면 비키기  9 카메라 모드(참고)  10 긴급 전화(참고)
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 
@@ -250,9 +250,9 @@ check('points', pts?.points > 0 && pts?.unlocks >= 1);
 const c2 = await cycle('5_lock_again');
 check('lockAgain', c2.off.lockAlive);
 await sleep(1500);
-const tapped = tapText(/급할 때 그냥 열기/);
+const tapped = tapText(/이번엔 건너뛰기/);
 await sleep(3000);
-const s2 = log('7 급할 때 그냥 열기', { tapped, ...state() });
+const s2 = log('7 이번엔 건너뛰기', { tapped, ...state() });
 shot('6_after_skip');
 check('skipTapped', !!tapped && !/LockActivity/.test(s2.focus || ''));
 await unlockPin();

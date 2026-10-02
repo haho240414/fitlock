@@ -12,7 +12,7 @@ import java.util.UUID
  * 잠금 설정(앱 화면이 FitLock.setConfig 로 넘긴 JSON)과 네이티브 쪽 상태를 SharedPreferences 에 둔다.
  * 서비스는 웹 화면 없이도 이것만 보고 잠글지 정한다.
  * - unlockedUntil : 운동·건너뛰기 뒤 그냥 열어 두는 시각
- * - skipDay/skips : 오늘 '급할 때 그냥 열기'를 몇 번 했는지 (버튼 글씨용)
+ * - skipDay/skips : 오늘 '이번엔 건너뛰기'를 몇 번 했는지 (버튼 글씨용)
  * - events        : 웹 화면이 못 봤을 수도 있는 일(건너뛰기·홈·전화·자동 통과) → 앱이 열릴 때 웹이 가져가 포인트·기록에 반영
  */
 object LockPrefs {

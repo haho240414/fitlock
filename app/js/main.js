@@ -65,7 +65,7 @@ async function syncNative() {
   } catch (e) { console.warn('setConfig', e); }
 }
 
-/** 잠금 화면 네이티브 버튼(급할 때 그냥 열기·홈 버튼·전화·자동 통과) 기록을 받아 반영 */
+/** 잠금 화면 네이티브 버튼(이번엔 건너뛰기·홈 버튼·전화·자동 통과) 기록을 받아 반영 */
 async function drainNative() {
   if (!FitLock) return;
   try {
@@ -282,7 +282,7 @@ function renderSettings() {
       <div class="stepper"><button data-action="target" data-d="-1">−</button><output class="num">${st.target}</output><button data-action="target" data-d="1">+</button></div></div>
     <div class="field"><div><div class="label">한 번 하면 자유</div><div class="help">운동하고 나면 이 시간 동안은 그냥 열려요</div></div>
       <select data-set="lock.freeMinutes">${FREE_OPTIONS.map(([v, l]) => `<option value="${v}" ${L.freeMinutes === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-    <div class="field"><div><div class="label">무료 건너뛰기 (하루)</div><div class="help">이만큼은 기록 손해 없이 '급할 때 그냥 열기'</div></div>
+    <div class="field"><div><div class="label">무료 건너뛰기 (하루)</div><div class="help">이만큼은 기록 손해 없이 '이번엔 건너뛰기'</div></div>
       <div class="stepper"><button data-action="skips" data-d="-1">−</button><output class="num">${L.skipsPerDay}</output><button data-action="skips" data-d="1">+</button></div></div>
   </section>
 
@@ -337,7 +337,7 @@ function renderSettings() {
 
   <section class="card"><h2>알아 둘 것</h2>
     <p class="notice"><b>보안 잠금이 아니에요.</b> 폰의 PIN·지문 잠금은 그대로 쓰세요. 핏락은 그 위에 운동 화면을 하나 더 띄울 뿐이고,
-      '급할 때 그냥 열기'·긴급 전화·홈 버튼으로 언제든 나갈 수 있어요. 전화가 오면 바로 비켜요.</p>
+      '이번엔 건너뛰기'·긴급 전화·홈 버튼으로 언제든 나갈 수 있어요. 전화가 오면 바로 비켜요.</p>
     <p class="notice">카메라는 운동 화면에서 '카메라'를 고를 때만 켜지고, 영상은 저장하거나 어디로 보내지 않아요. 위치도 이 폰 안에서만 써요. 서버가 없어요.</p>
     <p class="notice">카메라 운동 인식은 <b>핸즈프리 PT</b> 엔진을 그대로 써요. '폰 들고' 세기는 아직 실제 폰으로 맞추는 중이에요 — 틀리면 센서 기록을 보내 주세요.</p>
     <p class="small dim">${info ? `핏락 ${esc(info.version || '')} · 안드로이드 ${esc(info.release || '')} (API ${sdk}) · ${esc(info.manufacturer || '')} ${esc(info.model || '')}` : '브라우저 미리 보기'}</p>
@@ -490,7 +490,7 @@ async function pickCamera(deviceId) {
     sheet({
       title: '후면 카메라로 할 때',
       html: `<p>폰 <b>뒷면(카메라)이 나를 보게</b> 세워 두세요. 화면은 반대쪽이라 몇 개 했는지는 <b>소리</b>로 알려 줘요.</p>
-        <p class="small">무음·진동 모드면 소리가 안 나요. 잠금 화면 아래 버튼('급할 때 그냥 열기')은 그대로 있어요.</p>`,
+        <p class="small">무음·진동 모드면 소리가 안 나요. 잠금 화면 아래 버튼('이번엔 건너뛰기')은 그대로 있어요.</p>`,
       actions: [{ label: '알겠어요', cls: 'primary' }],
     });
   } else toast(`카메라: ${describe(toSetting(c))}`);
@@ -504,7 +504,7 @@ function notSecuritySheet() {
       title: '먼저 알아 두세요',
       html: `<p>핏락은 <b>운동 습관용 잠금</b>이에요. 보안 잠금이 아니에요.</p>
         <ol><li>폰의 PIN·지문 잠금은 그대로 두세요. 핏락은 그 위에 운동 화면을 하나 더 띄워요.</li>
-        <li>'급할 때 그냥 열기'와 긴급 전화 버튼이 언제나 있어요. 하루 ${loadSettings().lock.skipsPerDay}번까지는 기록 손해도 없어요.</li>
+        <li>'이번엔 건너뛰기'와 긴급 전화 버튼이 언제나 있어요. 하루 ${loadSettings().lock.skipsPerDay}번까지는 기록 손해도 없어요.</li>
         <li>전화가 오면 바로 비켜요. 센서·카메라를 못 쓰면 그냥 열려요.</li>
         <li>카메라는 운동 화면이 떠 있을 때만 켜지고, 영상은 어디에도 저장·전송하지 않아요.</li></ol>`,
       actions: [
