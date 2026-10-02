@@ -32,21 +32,43 @@ export function toast(msg, ms = 2400) {
  * 아래에서 올라오는 창. actions: [{label, cls, onClick(close) → false 면 안 닫음}]
  * @returns {() => void} 닫기
  */
+let sheetId = 0;
+let sheetCount = 0;
+let previousOverflow = '';
 export function sheet({ title = '', html = '', actions = [], dismissable = true, steps = null, onClose = null }) {
+  const previousFocus = document.activeElement;
+  const titleId = `sheet-title-${++sheetId}`;
   const back = document.createElement('div');
   back.className = 'sheet-back';
   const box = document.createElement('div');
   box.className = 'sheet';
   box.setAttribute('role', 'dialog');
   box.setAttribute('aria-modal', 'true');
+  box.tabIndex = -1;
+  if (title) box.setAttribute('aria-labelledby', titleId);
   box.innerHTML = `${steps ? `<div class="steps">${Array.from({ length: steps.n }, (_, i) => `<i class="${i <= steps.i ? 'on' : ''}"></i>`).join('')}</div>` : ''}
-    ${title ? `<h2>${esc(title)}</h2>` : ''}<div class="sheet-body">${html}</div><div class="actions"></div>`;
+    ${title ? `<h2 id="${titleId}">${esc(title)}</h2>` : ''}<div class="sheet-body">${html}</div><div class="actions"></div>`;
   let closed = false;
   const close = () => {
     if (closed) return;
     closed = true;
     back.remove();
+    document.removeEventListener('keydown', onKey);
+    if (--sheetCount === 0) document.body.style.overflow = previousOverflow;
+    const nextSheet = [...document.querySelectorAll('.sheet')].at(-1);
+    if (nextSheet) nextSheet.focus();
+    else if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     onClose?.();
+  };
+  const onKey = (e) => {
+    if ([...document.querySelectorAll('.sheet-back')].at(-1) !== back) return;
+    if (e.key === 'Escape' && dismissable) { e.preventDefault(); close(); return; }
+    if (e.key !== 'Tab') return;
+    const controls = [...box.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href]')].filter((el) => el.getClientRects().length);
+    if (!controls.length) { e.preventDefault(); box.focus(); return; }
+    const first = controls[0], last = controls.at(-1);
+    if (e.shiftKey && (document.activeElement === first || !box.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (document.activeElement === last || !box.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
   };
   back._close = close; // 뒤로 가기 버튼 등 바깥에서 닫을 때도 onClose 가 불리게
   for (const a of actions) {
@@ -62,7 +84,10 @@ export function sheet({ title = '', html = '', actions = [], dismissable = true,
   }
   if (dismissable) back.addEventListener('click', (e) => { if (e.target === back) close(); });
   back.append(box);
+  if (sheetCount++ === 0) { previousOverflow = document.body.style.overflow; document.body.style.overflow = 'hidden'; }
   document.body.append(back);
+  document.addEventListener('keydown', onKey);
+  box.focus();
   return close;
 }
 

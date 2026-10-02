@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="fitlock_bg">#0B0E1A</color>
+    <color name="fitlock_bg">#F6F6F7</color>
+    <color name="fitlock_yellow">#FFE457</color>
 </resources>

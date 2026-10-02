@@ -1,10 +1,11 @@
 // 잠금 화면 (lock.html). 세 가지로 열린다:
-//  - lock     : 안드로이드 잠금 화면 위(LockActivity). 아래 '긴급 전화'·'급할 때 그냥 열기'는 네이티브 버튼 줄이 맡는다
+//  - lock     : 안드로이드 잠금 화면 위(LockActivity). 아래 '긴급 전화'·'이번엔 건너뛰기'는 네이티브 버튼 줄이 맡는다
 //  - practice : 앱에서 '지금 운동하기'(?practice=1) — 연습. 끝나면 앱 홈으로
 //  - browser  : 브라우저 개발 미리 보기
 // 지킬 것: 센서·카메라를 못 쓰면 바로 열어 준다. 센서·카메라는 화면이 보일 때만 켠다. 전화가 오면 네이티브가 비켜 준다.
 
 import { $, fmt, hhmm, dateLabel, toast, coinBurst } from './ui.js';
+import { mountIcons } from './icons.js';
 import { FitLock, buzz } from './native.js';
 import { loadSettings, loadState, updateState } from './store.js';
 import { recordSession, recordSkip, recordPass, levelInfo, streakInfo, todaySummary, summaryOf } from './rewards.js';
@@ -68,11 +69,16 @@ function renderGoal() {
   $('lk-cam-ex').textContent = exName();
   $('lk-mode-sensor').classList.toggle('on', ui.mode === 'sensor');
   $('lk-mode-camera').classList.toggle('on', ui.mode === 'camera');
+  $('lk-mode-sensor').setAttribute('aria-pressed', String(ui.mode === 'sensor'));
+  $('lk-mode-camera').setAttribute('aria-pressed', String(ui.mode === 'camera'));
   $('lk-meter-box').hidden = ui.mode !== 'sensor';
   $('lk-hint').textContent = ui.mode === 'sensor' ? SENSOR_EXERCISES[sensorEx].hint : '폰을 세워 두고 2~3m 뒤로 가서 하세요';
   $('lk-hint').classList.remove('strong');
   stopDemo?.();
-  stopDemo = playDemo($('lk-demo'), exId(), { color: '#c8f53c' });
+  // Keep the exercise demonstration available to existing code without animating a hidden canvas.
+  if (getComputedStyle($('lk-demo')).display !== 'none') {
+    stopDemo = playDemo($('lk-demo'), exId(), { color: getComputedStyle(document.body).getPropertyValue('--lk-accent').trim() });
+  }
   const prog = $('lk-prog');
   prog.style.strokeDasharray = `${C}`;
   setRing();
@@ -267,16 +273,19 @@ async function complete() {
 
 function showDone(res) {
   $('lk-cam').hidden = true;
+  $('lk').inert = true;
+  $('lk').setAttribute('aria-hidden', 'true');
   $('lk-done').hidden = false;
   $('lk-done-title').textContent = ui.kind === 'lock' ? '열렸어요!' : '잘했어요!';
   $('lk-done-total').textContent = `+${fmt(res.total)}P`;
   $('lk-done-list').innerHTML = res.gains.map((g) => `<li>${g.label} <b>+${g.pts}P</b></li>`).join('')
-    + (res.streak?.extended ? `<li>🔥 연속 ${res.streak.count}일째</li>` : '');
+    + (res.streak?.extended ? `<li>연속 ${res.streak.count}일째</li>` : '');
   if (res.levelUp) {
     $('lk-done-lvup').hidden = false;
-    $('lk-done-lvup').textContent = `🎉 레벨 업! Lv.${res.levelUp.to} ${levelInfo(loadState().earned).title}`;
+    $('lk-done-lvup').textContent = `레벨 업! Lv.${res.levelUp.to} ${levelInfo(loadState().earned).title}`;
   }
   renderHeader();
+  $('lk-done').focus();
   coinBurst($('lk-done-total'), $('lk-points'), Math.min(14, 4 + Math.round(res.total / 5)));
 }
 
@@ -285,7 +294,9 @@ function pass(reason, msg) {
   if (ui.done) return;
   ui.done = true;
   stopCounting();
-  updateState((s) => recordPass(s, { reason }));
+  // A desktop preview has no motion sensor. Keep the explanation visible without
+  // filling the user's history with preview-only failures or reloading in a loop.
+  if (ui.kind !== 'browser') updateState((s) => recordPass(s, { reason }));
   $('lk-hint').textContent = msg;
   $('lk-hint').classList.add('strong');
   toast(msg, 3000);
@@ -299,7 +310,6 @@ function finish(result, extra = {}) {
     location.replace('index.html#home');
   } else {
     $('lk-done-bar').hidden = result !== 'success';
-    if (result !== 'success') setTimeout(() => location.reload(), 1200);
   }
 }
 
@@ -317,7 +327,7 @@ function scheduleHelp() {
     }, 25000),
     setTimeout(() => {
       if (ui.done || !ui.visible || ui.count !== at) return;
-      flashHint(ui.kind === 'lock' ? "그래도 안 되면 아래 '급할 때 그냥 열기'를 누르세요 — 설정에서 센서 기록을 보내 주시면 고칠게요" : '카메라(세워 두고)로 바꿔 봐도 돼요', 10000);
+      flashHint(ui.kind === 'lock' ? "그래도 안 되면 아래 '이번엔 건너뛰기'를 누르세요 — 설정에서 센서 기록을 보내 주시면 고칠게요" : '카메라(세워 두고)로 바꿔 봐도 돼요', 10000);
     }, 45000),
   ];
 }
@@ -362,19 +372,18 @@ async function init() {
   $('lk-mode-sensor').addEventListener('click', () => switchMode('sensor'));
   $('lk-mode-camera').addEventListener('click', () => switchMode('camera'));
   $('lk-cam-back').addEventListener('click', () => switchMode('sensor'));
-  $('lk-done-close').addEventListener('click', () => location.reload());
+  $('lk-done-close').addEventListener('click', () => location.replace('index.html#home'));
   $('lk-web-close').addEventListener('click', () => {
     stopCounting();
     saveLog('quit');
-    if (ui.kind === 'practice') location.replace('index.html#home');
-    else location.reload();
+    location.replace('index.html#home');
   });
   $('lk-web-skip').addEventListener('click', () => { // 브라우저 미리 보기용 (실제 잠금에선 네이티브 버튼)
     stopCounting();
     saveLog('skip');
     const r = updateState((s) => recordSkip(s, { reason: 'button', freeLimit: st.lock.skipsPerDay }));
     toast(r.free ? '건너뛰었어요 (기록 손해 없음)' : '건너뛰었어요 — 기록에 남아요');
-    setTimeout(() => location.reload(), 1200);
+    setTimeout(() => location.replace('index.html#home'), 1200);
   });
 
   window.addEventListener('pagehide', () => { stopCounting(); if (!ui.done) saveLog('leave'); });
@@ -415,4 +424,5 @@ window.__fitlock = {
   switchMode,
 };
 
+mountIcons();
 init();

@@ -2,14 +2,15 @@
   "appId": "io.github.haho240414.fitlock",
   "appName": "핏락",
   "webDir": "app",
-  "backgroundColor": "#0d1020",
+  "backgroundColor": "#f6f6f7",
   "android": {
     "allowMixedContent": false
   },
   "plugins": {
     "SystemBars": {
       "insetsHandling": "css",
-      "initialViewportFitValueHint": "cover"
+      "initialViewportFitValueHint": "cover",
+      "style": "LIGHT"
     }
   }
 }

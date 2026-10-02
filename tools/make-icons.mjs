@@ -8,22 +8,21 @@ import puppeteer from 'puppeteer-core';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const BG = '#0b0e1a';
+const BG = '#ffe457';
 
-// 살짝 열린 자물쇠(라임) + '핏'. scale: 512 기준 그림을 캔버스 안에서 얼마나 크게 그릴지
+// 노란 배경과 짙은 자물쇠 안에 두 잎. 웹의 icons.js brand와 같은 모티프.
 const mark = (scale = 1) => `
   <g transform="translate(256 256) scale(${scale}) translate(-256 -256)">
-    <path d="M178 238 V176 a78 78 0 0 1 156 0 V200" fill="none" stroke="#ffffff" stroke-width="40" stroke-linecap="round"/>
-    <rect x="124" y="226" width="264" height="206" rx="46" fill="#c8f53c"/>
-    <text x="256" y="378" text-anchor="middle" font-family="Apple SD Gothic Neo, Noto Sans KR, sans-serif"
-      font-weight="900" font-size="138" fill="#12160a">핏</text>
+    <path d="M176 232 V170 a80 80 0 0 1 160 0 V232" fill="none" stroke="#25282c" stroke-width="32" stroke-linecap="round"/>
+    <rect x="120" y="222" width="272" height="212" rx="56" fill="#25282c"/>
+    <path d="M256 371c-66 0-101-33-101-84 67 0 101 34 101 84Zm0 0c0-73 35-111 111-111 0 72-37 111-111 111Z" fill="#ffe457"/>
   </g>`;
-const bgFill = `<defs><radialGradient id="g" cx="50%" cy="28%" r="80%"><stop offset="0" stop-color="#2a3170"/><stop offset="1" stop-color="${BG}"/></radialGradient></defs>`;
+const bgFill = '';
 const svg = (w, h, body) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet">${body}</svg>`;
 
-const square = svg(512, 512, `${bgFill}<rect width="512" height="512" fill="url(#g)"/>${mark(0.9)}`);
-const rounded = svg(512, 512, `${bgFill}<rect width="512" height="512" rx="112" fill="url(#g)"/>${mark(0.84)}`);
-const round = svg(512, 512, `${bgFill}<circle cx="256" cy="256" r="256" fill="url(#g)"/>${mark(0.8)}`);
+const square = svg(512, 512, `${bgFill}<rect width="512" height="512" fill="${BG}"/>${mark(0.9)}`);
+const rounded = svg(512, 512, `${bgFill}<rect width="512" height="512" rx="112" fill="${BG}"/>${mark(0.84)}`);
+const round = svg(512, 512, `${bgFill}<circle cx="256" cy="256" r="256" fill="${BG}"/>${mark(0.8)}`);
 // 적응형 아이콘 전경: 108dp 중 가운데 66dp 원 안에 들어가야 잘리지 않는다
 const foreground = svg(512, 512, mark(0.56));
 
@@ -38,7 +37,7 @@ for (const [d, k] of Object.entries(dens)) {
   jobs.push([`${RES}/mipmap-${d}/ic_launcher_round.png`, 48 * k, 48 * k, round]);
   jobs.push([`${RES}/mipmap-${d}/ic_launcher_foreground.png`, 108 * k, 108 * k, foreground]);
 }
-// 스플래시(안드로이드 11 이하): 어두운 배경 가운데 로고
+// 스플래시(안드로이드 11 이하): 앱과 같은 밝은 배경 가운데 로고
 const splash = (w, h) => {
   const s = Math.min(w, h) * 0.34;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" fill="${BG}"/>

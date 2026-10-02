@@ -5,10 +5,11 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.Color
+import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.RippleDrawable
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
@@ -25,6 +26,7 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -37,7 +39,7 @@ import java.lang.ref.WeakReference
 
 /**
  * 잠금화면 '위에' 뜨는 운동 화면. 시스템 잠금(PIN·지문)을 바꾸지 않는다 — 그 위에 화면을 하나 더 띄울 뿐이다.
- * 웹 화면은 lock.html (같은 웹앱, 같은 저장소). 아래 버튼 줄('긴급 전화'·'급할 때 그냥 열기')은 네이티브라서
+ * 웹 화면은 lock.html (같은 웹앱, 같은 저장소). 아래 버튼 줄('긴급 전화'·'이번엔 건너뛰기')은 네이티브라서
  * 웹 화면이 멈추거나 죽어도 언제나 눌린다.
  *
  * 사람을 가두지 않기:
@@ -55,6 +57,7 @@ class LockActivity : BridgeActivity() {
     private var lastVisible: Boolean? = null
     private var shownAt = 0L // 사용자에게 처음 보인 시각 (elapsedRealtime)
     private var skipBtn: Button? = null
+    private var skipHint: TextView? = null
     private var bar: LinearLayout? = null
     private var screenReceiver: BroadcastReceiver? = null
     private var modeListener: Any? = null
@@ -117,48 +120,80 @@ class LockActivity : BridgeActivity() {
     private fun pill(text: String, bg: Int, fg: Int, onClick: () -> Unit): Button = Button(this).apply {
         this.text = text
         isAllCaps = false
-        maxLines = 2
+        setSingleLine(true)
+        gravity = Gravity.CENTER
+        includeFontPadding = false
+        minimumHeight = 0
+        minimumWidth = 0
         setTextColor(fg)
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
         typeface = Typeface.DEFAULT_BOLD
-        background = GradientDrawable().apply {
+        val shape = GradientDrawable().apply {
             cornerRadius = dp(14).toFloat()
             setColor(bg)
         }
+        background = RippleDrawable(ColorStateList.valueOf(0x1425282C), shape, null)
         stateListAnimator = null
-        setPadding(dp(6), 0, dp(6), 0)
+        setPadding(dp(8), 0, dp(8), 0)
         setOnClickListener { onClick() }
     }
 
     private fun addNativeBar() {
         val root = findViewById<ViewGroup>(android.R.id.content) ?: return
         val b = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setBackgroundColor(0xE60B0E1A.toInt())
-            setPadding(dp(12), dp(8), dp(12), dp(12))
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(BG)
+            setPadding(dp(16), dp(10), dp(16), dp(12))
         }
-        val emergency = pill("🚨 긴급 전화", 0xFF3A1A22.toInt(), 0xFFFF8A95.toInt()) { emergencyCall() }
+        val hint = TextView(this).apply {
+            text = skipHintLabel()
+            setTextColor(0xFF696D75.toInt())
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+            includeFontPadding = false
+            gravity = Gravity.CENTER
+        }
+        b.addView(hint, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            bottomMargin = dp(8)
+        })
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            // Align the button bounds rather than their text baselines.
+            isBaselineAligned = false
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        val emergency = pill("긴급 전화", 0xFFF8EDEA.toInt(), 0xFFA84D48.toInt()) { emergencyCall() }
         emergency.contentDescription = "긴급 전화 걸기"
-        val skip = pill(skipLabel(), 0xFF1C2240.toInt(), Color.WHITE) { skip("skip") }
-        skip.contentDescription = "급할 때 운동 없이 그냥 열기"
-        b.addView(emergency, LinearLayout.LayoutParams(0, dp(54), 1f).apply { marginEnd = dp(8) })
-        b.addView(skip, LinearLayout.LayoutParams(0, dp(54), 1.6f))
+        val skip = pill(skipLabel(), 0xFFFFE457.toInt(), 0xFF25282C.toInt()) { skip("skip") }
+        skip.contentDescription = "이번 운동 건너뛰기, ${skipHintLabel()}"
+        actions.addView(emergency, LinearLayout.LayoutParams(0, dp(52), 1f).apply { marginEnd = dp(8) })
+        actions.addView(skip, LinearLayout.LayoutParams(0, dp(52), 1.6f))
+        b.addView(actions, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         root.addView(b, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
         ViewCompat.setOnApplyWindowInsetsListener(b) { v, insets ->
             val bottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
-            v.setPadding(dp(12), dp(8), dp(12), dp(12) + bottom)
+            v.setPadding(dp(16), dp(10), dp(16), dp(12) + bottom)
             v.post { pushBarHeight() }
             insets
         }
         b.post { pushBarHeight() }
         bar = b
         skipBtn = skip
+        skipHint = hint
+        updateSkipLabels()
     }
 
-    private fun skipLabel(): String {
-        if (reason == REASON_PREVIEW) return "닫기 (미리 보기)"
+    private fun skipLabel(): String = if (reason == REASON_PREVIEW) "미리보기 닫기" else "이번엔 건너뛰기"
+
+    private fun skipHintLabel(): String {
+        if (reason == REASON_PREVIEW) return "잠금화면 미리보기"
         val left = LockPrefs.freeSkipsLeft(this)
-        return if (left > 0) "급할 때 그냥 열기\n무료 ${left}번 남음" else "급할 때 그냥 열기\n(기록에 남아요)"
+        return if (left > 0) "오늘 건너뛰기 ${left}회 남음" else "건너뛰면 활동 기록에 남아요"
+    }
+
+    private fun updateSkipLabels() {
+        skipBtn?.text = skipLabel()
+        skipBtn?.contentDescription = if (reason == REASON_PREVIEW) "미리보기 닫기" else "이번 운동 건너뛰기, ${skipHintLabel()}"
+        skipHint?.text = skipHintLabel()
     }
 
     /** 웹 화면이 아래 버튼 줄에 가리지 않게 높이를 알려 준다 */
@@ -170,7 +205,7 @@ class LockActivity : BridgeActivity() {
     }
 
     /** 처음 그리기 전 어림값 */
-    fun estimatedBarDp(): Int = if (barHeightDp > 0) barHeightDp else 54 + 8 + 12 + 24
+    fun estimatedBarDp(): Int = if (barHeightDp > 0) barHeightDp else 52 + 16 + 8 + 10 + 12 + 24
 
     val reasonText: String get() = reason
 
@@ -189,7 +224,7 @@ class LockActivity : BridgeActivity() {
         bridge?.triggerWindowJSEvent(if (v) "fitlock:visible" else "fitlock:hidden")
         if (v) {
             keepAwake(30)
-            skipBtn?.text = skipLabel()
+            updateSkipLabels()
         }
     }
 
@@ -216,7 +251,7 @@ class LockActivity : BridgeActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         intent.getStringExtra(EXTRA_REASON)?.let { reason = it }
-        skipBtn?.text = skipLabel()
+        updateSkipLabels()
     }
 
     override fun onUserLeaveHint() {
@@ -293,7 +328,7 @@ class LockActivity : BridgeActivity() {
         finishNow()
     }
 
-    /** 급할 때 그냥 열기 / 홈 버튼으로 나감. 운동 없이도 언제나 열린다 */
+    /** 이번엔 건너뛰기 / 홈 버튼으로 나감. 운동 없이도 언제나 열린다 */
     private fun skip(type: String) {
         if (closing) return
         Log.i(TAG, "close: skip type=$type")
@@ -404,7 +439,7 @@ class LockActivity : BridgeActivity() {
         const val EXTRA_REASON = "reason"
         const val REASON_PREVIEW = "preview"
         private const val WATCHDOG_MS = 12_000L
-        private val BG = 0xFF0B0E1A.toInt()
+        private val BG = 0xFFF6F6F7.toInt()
 
         @Volatile var alive = false
         @Volatile var showing = false

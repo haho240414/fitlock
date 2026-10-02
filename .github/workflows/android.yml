@@ -2,7 +2,7 @@ name: 안드로이드 앱 (APK)
 
 on:
   push:
-    branches: [main, 'claude/**']
+    branches: [main, 'claude/**', 'codex/**']
     paths: ['app/**', 'android/**', 'test/**', 'tools/**', 'capacitor.config.json', 'package*.json', '.github/workflows/android.yml', '.github/scripts/**']
   workflow_dispatch:
 
