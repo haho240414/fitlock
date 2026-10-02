@@ -16,6 +16,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
@@ -52,6 +53,7 @@ class LockActivity : BridgeActivity() {
     private var leavingOnPurpose = false
     private var resumedNow = false
     private var lastVisible: Boolean? = null
+    private var shownAt = 0L // 사용자에게 처음 보인 시각 (elapsedRealtime)
     private var skipBtn: Button? = null
     private var bar: LinearLayout? = null
     private var screenReceiver: BroadcastReceiver? = null
@@ -181,6 +183,8 @@ class LockActivity : BridgeActivity() {
         if (v == lastVisible) return
         lastVisible = v
         showing = v
+        if (v && shownAt == 0L) shownAt = SystemClock.elapsedRealtime()
+        Log.i(TAG, "visible=$v reason=$reason")
         // 웹 화면: 보일 때만 센서·카메라를 켠다
         bridge?.triggerWindowJSEvent(if (v) "fitlock:visible" else "fitlock:hidden")
         if (v) {
@@ -217,8 +221,13 @@ class LockActivity : BridgeActivity() {
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        // 홈·최근 앱 버튼으로 나감 → 막지 않고 건너뛰기로 기록
-        if (!closing && !leavingOnPurpose) skip("home")
+        // 홈·최근 앱 버튼으로 나감 → 막지 않고 건너뛰기로 기록.
+        // 단, 화면이 켜져 있고 이 화면이 실제로 1.5초 넘게 보인 뒤에만 — 안드로이드 16 은 화면이 꺼지며 멈출 때도
+        // 이 신호를 보낸 적이 있다(에뮬레이터 API 36 실측). 그때 닫으면 잠금이 아예 안 보인다.
+        val screenOn = getSystemService(PowerManager::class.java)?.isInteractive == true
+        val shownMs = if (shownAt > 0L) SystemClock.elapsedRealtime() - shownAt else -1L
+        Log.i(TAG, "userLeaveHint screenOn=$screenOn shownMs=$shownMs closing=$closing")
+        if (!closing && !leavingOnPurpose && screenOn && shownMs >= 1500) skip("home")
     }
 
     override fun onDestroy() {
@@ -273,6 +282,7 @@ class LockActivity : BridgeActivity() {
     /** 전화: 기록 손해 없이 바로 비키고, 통화 뒤 10분은 잠그지 않는다 */
     private fun stepAside() {
         if (closing) return
+        Log.i(TAG, "close: call")
         closing = true
         if (reason != REASON_PREVIEW) {
             LockPrefs.pushEvent(this, "call")
@@ -286,6 +296,7 @@ class LockActivity : BridgeActivity() {
     /** 급할 때 그냥 열기 / 홈 버튼으로 나감. 운동 없이도 언제나 열린다 */
     private fun skip(type: String) {
         if (closing) return
+        Log.i(TAG, "close: skip type=$type")
         closing = true
         if (reason != REASON_PREVIEW) {
             LockPrefs.addSkip(this)
@@ -301,6 +312,7 @@ class LockActivity : BridgeActivity() {
     /** 웹 화면이 준비되지 않음(멈춤·오류) → 그냥 열어 준다 */
     private fun passThrough(why: String) {
         if (closing) return
+        Log.i(TAG, "close: pass why=$why")
         closing = true
         if (reason != REASON_PREVIEW) {
             LockPrefs.pushEvent(this, "pass", JSONObject().put("reason", why))
@@ -313,6 +325,7 @@ class LockActivity : BridgeActivity() {
     /** 긴급 전화: 긴급 통화 화면을 열고(잠금 상태에서도 쓸 수 있다) 이 화면은 비킨다 */
     fun emergencyCall() {
         if (closing) return
+        Log.i(TAG, "close: emergency")
         closing = true
         leavingOnPurpose = true
         if (reason != REASON_PREVIEW) {
@@ -337,6 +350,7 @@ class LockActivity : BridgeActivity() {
     /** 웹 화면이 끝을 알림: success(운동 다 함) / pass(센서·카메라를 못 써서 그냥 열어 줌) */
     fun finishFromWeb(result: String) {
         if (closing) return
+        Log.i(TAG, "close: web result=$result")
         closing = true
         if (reason != REASON_PREVIEW) {
             LockPrefs.setUnlockedUntil(this, if (result == "success") freeUntil(0) else freeUntil(30))
@@ -379,7 +393,10 @@ class LockActivity : BridgeActivity() {
     }
 
     private fun finishNow() {
-        if (!isFinishing && !isDestroyed) finishAndRemoveTask()
+        if (!isFinishing && !isDestroyed) {
+            Log.i(TAG, "finish reason=$reason")
+            finishAndRemoveTask()
+        }
     }
 
     companion object {

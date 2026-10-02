@@ -214,13 +214,19 @@ class LockService : Service() {
             NotificationManagerCompat.from(ctx).cancel(NOTIF_ID)
         }
 
-        /** 운동 화면 띄우기 */
+        /**
+         * 운동 화면 띄우기.
+         * NO_USER_ACTION: 사람이 누른 게 아니라는 표시. 없으면 (1) 앞에 있던 앱이 '사용자가 떠남'(onUserLeaveHint)을 받아
+         * 동영상 앱이 PIP 로 바뀌는 등 엉뚱하게 반응하고, (2) 안드로이드 16 에선 화면이 꺼지며 이 화면이 바로 멈출 때
+         * 그 '떠남' 표시가 이 화면에 붙어 와서 홈 버튼으로 나간 것처럼 보였다(에뮬레이터 API 36 실측).
+         */
         fun launch(ctx: Context, reason: String) {
             val i = Intent(ctx, LockActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION or Intent.FLAG_ACTIVITY_NO_USER_ACTION)
                 .putExtra(LockActivity.EXTRA_REASON, reason)
             try {
                 ctx.startActivity(i)
+                Log.i(TAG, "launch reason=$reason")
             } catch (e: Exception) {
                 Log.w(TAG, "launch", e)
             }
