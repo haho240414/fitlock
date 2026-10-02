@@ -1,0 +1,233 @@
+/* Reference-inspired refinement: calm white surfaces, yellow progress and clear tasks. */
+:root { --radius: 22px; }
+.app { max-width: 520px; padding-left: 20px; padding-right: 20px; }
+.app-top { margin: 0 0 22px; }
+.logo { font-size: 25px; letter-spacing: -.9px; }
+.brand-mark { width: 36px; height: 36px; border-radius: 12px; }
+#top-level { min-height: 36px; padding: 8px 12px; font-size: 12px; gap: 2px; }
+#top-level .icon { width: 13px; height: 13px; margin-left: 4px; }
+.card { border: 0; border-radius: 22px; padding: 20px; margin: 12px 0; box-shadow: none; }
+.page-intro { margin-bottom: 18px; }
+.page-intro h1 { font-size: 24px; font-weight: 800; margin-bottom: 5px; letter-spacing: -.8px; }
+.page-intro p { font-size: 13px; }
+.daily-card { margin-top: 0; padding: 22px 20px 16px; }
+.daily-card h1 { font-size: 23px; line-height: 1.3; margin: 0 0 14px; letter-spacing: -.8px; font-weight: 800; }
+.daily-overview { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.daily-overview .grow { min-width: 0; }
+.daily-target { font-size: 13px; color: var(--muted); margin: 0 0 2px; }
+.daily-count { font-size: 58px; font-weight: 800; letter-spacing: -2.2px; line-height: 1.2; overflow-wrap: anywhere; }
+.daily-count small { margin-left: 7px; font-size: 25px; letter-spacing: -.5px; }
+.daily-reward { font-size: 12px; color: var(--muted); font-weight: 650; margin: 6px 0 0; line-height: 1.5; }
+.dashboard-ring { width: 110px; height: 110px; flex: none; position: relative; }
+.dashboard-ring > svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.dashboard-ring circle { fill: none; stroke-width: 8; }
+.dashboard-ring .track { stroke: var(--card2); }
+.dashboard-ring .progress { stroke: var(--accent); stroke-linecap: round; }
+.dashboard-ring > div { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.dashboard-ring strong { font-size: 27px; font-weight: 800; letter-spacing: -.6px; }
+.dashboard-ring strong small { font-size: 18px; margin-left: 2px; }
+.dashboard-ring > div > span { font-size: 11px; color: var(--muted); }
+.workout-primary { background: var(--text); color: #fff; min-height: 50px; border: 0; border-radius: 14px; font-size: 15px; font-weight: 700; }
+.workout-primary .icon { width: 18px; height: 18px; }
+.workout-options { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+.workout-options > span { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.workout-options > span .icon { width: 17px; height: 17px; }
+.workout-options .btn { min-height: 38px; font-size: 11px; padding: 8px 9px; gap: 4px; border: 0; background: var(--card2); border-radius: 12px; flex: none; }
+.workout-options .btn .icon { width: 15px; height: 15px; }
+.workout-options .btn .icon:last-child { width: 12px; }
+.wallet-strip { display: flex; align-items: center; gap: 13px; width: 100%; min-height: 80px; text-align: left; background: var(--accent); padding: 14px 20px; border-radius: 22px; margin: 12px 0; }
+.wallet-strip > .icon:first-child { width: 43px; height: 43px; }
+.wallet-strip > .grow { min-width: 0; }
+.wallet-strip .grow > span { font-size: 12px; }
+.wallet-strip strong { display: block; font-size: 27px; letter-spacing: -.7px; line-height: 1.25; overflow-wrap: anywhere; }
+.wallet-strip strong small { font-size: 16px; margin-left: 6px; }
+.wallet-strip > .icon:last-child { width: 19px; height: 19px; }
+.growth-card { padding: 17px 20px 19px; }
+.growth-heading { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.growth-link { display: flex; gap: 10px; align-items: center; text-align: left; min-width: 0; }
+.growth-symbol { width: 43px; height: 45px; border-radius: 14px; display: grid; place-items: center; background: #fff1ac; flex: none; }
+.growth-symbol .icon { width: 26px; height: 26px; }
+.growth-link .grow { min-width: 0; }
+.growth-link strong { display: block; font-size: 13px; line-height: 1.5; }
+.growth-link .grow > span { display: block; font-size: 11px; color: var(--muted); }
+.growth-link > .icon { width: 12px; height: 12px; color: var(--muted); }
+.streak-label { font-size: 12px; white-space: nowrap; }
+.growth-progress { height: 7px; margin: 13px 0 15px; background: var(--card2); }
+.growth-progress > i { background: var(--accent); }
+.growth-card .week { gap: 6px; }
+.growth-card .week i { width: 24px; height: 24px; margin-top: 8px; }
+.growth-card .week div { font-size: 11px; }
+.home-missions { margin-top: 21px; }
+.section-heading { padding: 0 1px; margin-bottom: 10px; }
+.section-heading h2 { font-size: 18px; letter-spacing: -.5px; }
+.section-heading .btn { font-size: 11px; }
+.mission-list { padding: 0 16px; }
+.mission { gap: 10px; padding: 17px 0; }
+.mission .ic { width: 39px; height: 41px; border: 0; border-radius: 13px; background: #f1f2f4; }
+.mission .ic .icon { width: 23px; height: 23px; }
+.mission .mission-camera { background: #eaf2ff; }
+.mission .mission-unlock { background: #f1eaff; }
+.mission .mission-sun { background: #fff1c6; }
+.mission .mission-workout { background: #eaf4e4; }
+.mission .grow { display: block; min-width: 0; }
+.mission .t { font-size: 13px; line-height: 1.45; font-weight: 700; }
+.mission-meter { height: 4px; margin: 6px 0 5px; background: var(--card2); }
+.mission-meter > i { background: var(--accent); }
+.mission-progress { font-size: 10px; color: var(--muted); line-height: 1.4; white-space: normal; }
+.mission .btn { min-height: 38px; border: 0; border-radius: 12px; padding: 8px 10px; font-size: 11px; flex: none; }
+.reward-amount { font-size: 12px; background: #fff3b7; padding: 8px 10px; border-radius: 12px; }
+.mission-received { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; color: var(--muted); flex: none; }
+.mission-received .icon { width: 13px; height: 13px; }
+.mission.claimed { opacity: 1; }
+.mission.claimed .t { color: var(--muted); }
+.mission.claimed .ic { background: #f1f2f4; color: var(--muted); }
+.mission.failed .t { text-decoration: none; color: var(--muted); }
+.mission.failed .mission-meter { display: none; }
+.points-summary { background: #fff; padding: 20px; min-height: 135px; }
+.points-summary strong { font-size: 44px; font-weight: 800; line-height: 1.3; }
+.points-summary strong small { font-size: 24px; }
+.points-summary p { font-size: 12px; color: var(--muted); }
+.points-summary .dashboard-ring { width: 94px; height: 94px; }
+.leaf-ring > div { isolation: isolate; }
+.leaf-ring > div > .icon { width: 34px; height: 34px; stroke-width: 1.6; }
+.leaf-ring > div::before { content: ''; position: absolute; inset: 16px; background: #fff3b7; border-radius: 50%; z-index: -1; }
+.page-seg { display: flex; gap: 0; padding: 3px; background: #eceef1; border-radius: 13px; margin: 16px 0 12px; flex-wrap: nowrap; }
+.page-seg button { flex: 1; min-width: 0; min-height: 38px; font-size: 13px; font-weight: 700; border: 0; border-radius: 10px; background: none; color: var(--muted); }
+.page-seg button.on { background: var(--accent); color: var(--text); border: 0; }
+.rewards-shop h2 { font-size: 18px; margin: 0 0 4px; }
+.rewards-shop h3 { font-size: 14px; margin: 16px 0 12px; }
+.shopitem { gap: 10px; padding: 15px 0; }
+.shopitem .grow { min-width: 0; }
+.shopitem .t { font-size: 13px; font-weight: 700; }
+.shopitem .small { font-size: 10px; line-height: 1.65; margin-top: 2px; }
+.shop-symbol { width: 39px; height: 41px; display: grid; place-items: center; background: #fff4c8; border-radius: 13px; flex: none; }
+.shop-symbol.rose { background: #ffebeb; }
+.shop-symbol .icon { width: 23px; height: 23px; }
+.shopitem .btn { min-height: 38px; min-width: 57px; border: 0; border-radius: 12px; font-size: 12px; padding: 7px 10px; flex: none; }
+.shop-more { justify-content: space-between; border: 0; background: var(--card2); font-size: 12px; border-radius: 12px; min-height: 40px; margin-top: 12px; }
+.shop-more .icon { width: 15px; height: 15px; }
+.shop-note { margin: 14px 0 0; font-size: 11px; color: var(--muted); }
+.theme-tiles { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.theme-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; padding: 12px 9px; gap: 6px; border-radius: 14px; text-align: left; min-width: 0; border: 2px solid transparent; }
+.theme-tile.theme-ocean { background: #e5f4fb; color: #2e7895; }
+.theme-tile.theme-sunset { background: #fff0e3; color: #a45c36; }
+.theme-tile.theme-forest { background: #eaf4e5; color: #55794c; }
+.theme-tile.on { border-color: currentColor; }
+.theme-tile strong { font-size: 12px; }
+.theme-tile span { font-size: 10px; }
+.theme-tile:disabled { opacity: .65; }
+.basic-theme { margin-top: 12px; min-height: 40px; font-size: 12px; }
+.growth-shortcut { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; font-size: 13px; font-weight: 700; }
+.growth-shortcut .grow small { display: block; color: var(--muted); font-size: 10px; font-weight: 400; margin-top: 3px; }
+.growth-shortcut > .icon { width: 20px; height: 20px; }
+.weekly-overview { display: flex; align-items: center; gap: 10px; }
+.weekly-overview .grow { min-width: 0; }
+.weekly-overview h2 { font-size: 17px; margin: 0 0 3px; }
+.weekly-count { display: block; font-size: 52px; line-height: 1.2; letter-spacing: -1.8px; overflow-wrap: anywhere; }
+.weekly-count small { margin-left: 7px; font-size: 24px; letter-spacing: -.4px; }
+.weekly-overview p { margin: 8px 0 0; font-size: 11px; color: var(--muted); line-height: 1.6; }
+.weekly-overview .dashboard-ring { width: 96px; height: 96px; }
+.weekly-stats { display: grid; grid-template-columns: repeat(3,1fr); border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
+.weekly-stats > div { padding: 0 12px; border-left: 1px solid var(--line); }
+.weekly-stats > div:first-child { padding-left: 0; border: 0; }
+.weekly-stats > div:last-child { padding-right: 0; }
+.weekly-stats span { display: block; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.weekly-stats strong { display: block; font-size: 24px; letter-spacing: -.5px; margin-top: 3px; }
+.weekly-stats small { font-size: 13px; margin-left: 3px; }
+.activity-chart-card .page-seg { margin: 0 0 17px; }
+.activity-chart-card h2 { margin: 0; font-size: 17px; }
+.activity-chart { display: flex; gap: 8px; margin-top: 24px; height: 140px; }
+.activity-column { display: flex; flex-direction: column; flex: 1; align-items: center; min-width: 0; }
+.plot { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 110px; border-bottom: 1px solid var(--line); background: repeating-linear-gradient(to top,transparent 0,transparent 36px,#eceef080 36px,#eceef080 37px); }
+.plot > i { display: block; width: 68%; position: relative; min-height: 2px; border-radius: 6px 6px 0 0; background: #dfe1e6; font-style: normal; }
+.plot > i > span { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(100% + 4px); font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text); }
+.latest .plot > i { background: var(--accent); }
+.future .plot > i { opacity: .4; }
+.day-label { min-width: 23px; margin-top: 6px; text-align: center; font-size: 11px; padding: 2px; border-radius: 50%; color: var(--muted); }
+.activity-column.today .day-label { background: #fff1ac; color: var(--text); }
+.activity-chart.fortnight { gap: 3px; }
+.fortnight .plot > i { width: 75%; border-radius: 3px 3px 0 0; }
+.fortnight .plot > i > span { font-size: 8px; }
+.fortnight .day-label { font-size: 9px; min-width: 16px; }
+.chart-note { margin: 11px 0 0; font-size: 10px; color: var(--muted); }
+.exercise-summary h2 { margin-bottom: 2px; font-size: 17px; }
+.exercise-summary > p { margin: 0 0 8px; font-size: 11px; }
+.exercise-row { display: flex; width: 100%; align-items: center; gap: 10px; text-align: left; border-top: 1px solid var(--line); padding: 13px 0; }
+.exercise-row:first-of-type { border-top: 0; }
+.exercise-row .grow { min-width: 0; }
+.exercise-row .grow strong { display: block; font-size: 13px; margin-bottom: 7px; }
+.exercise-row .bar { display: block; height: 5px; }
+.exercise-row .bar > i { background: var(--accent); }
+.exercise-value { text-align: right; flex: none; }
+.exercise-value b { display: block; font-size: 13px; }
+.exercise-value small { font-size: 10px; color: var(--muted); }
+.exercise-row > .icon { width: 12px; height: 12px; color: var(--muted); }
+.activity-row { display: flex; align-items: center; gap: 10px; padding: 13px 0; border-top: 1px solid var(--line); }
+.activity-row:first-of-type { border: 0; }
+.activity-symbol { width: 34px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: #fff5ce; flex: none; }
+.activity-symbol .icon { width: 20px; height: 20px; }
+.activity-row .grow { min-width: 0; }
+.activity-row small { display: block; font-size: 10px; color: var(--muted); }
+.activity-row strong { display: block; font-size: 12px; line-height: 1.6; font-weight: 650; overflow-wrap: anywhere; }
+.activity-points { font-size: 11px; color: var(--muted); flex: none; }
+.activity-points.earned { background: #fff2b6; border-radius: 10px; color: var(--text); padding: 6px 8px; font-weight: 700; }
+.empty-state .btn { min-height: 42px; font-size: 13px; margin-top: 8px; }
+.tabs button { font-size: 10px; }
+.tabs button > span { width: 34px; height: 34px; }
+.tabs button:not([data-tab="home"]).on > span { background: none; }
+.tabs button:not([data-tab="home"]).on::after { content: ''; position: absolute; bottom: -3px; width: 18px; height: 3px; border-radius: 3px; background: var(--accent); }
+.status-row { padding: 14px 16px; border-radius: 18px; }
+.lockcard .state { font-size: 13px; }
+.lockcard .why { font-size: 11px; line-height: 1.7; }
+body.lock.theme-basic { --lk-bg: #f6f6f7; --lk-track: #e8e9eb; }
+.theme-basic .ring .prog { stroke: var(--accent); }
+.theme-basic .lk-main { background: #fff; border-radius: 24px; margin-top: 16px; padding: 15px 12px; }
+.lk-stats { padding: 12px 0; margin-top: 17px; }
+.lk-stats .chip { font-size: 12px; padding: 0 13px; }
+.lk-brand > span { color: var(--muted); font-size: 11px; }
+.lk-pace { background: #fff2b6; color: var(--text); font-size: 11px; }
+.lk-modes button { font-size: 12px; }
+.theme-basic .lk-modes button.on { background: var(--accent); border-color: var(--accent); }
+.lk-done { background: var(--lk-bg); }
+.lk-done > div { background: #fff; border-radius: 24px; padding: 28px 24px; max-width: 380px; width: 100%; }
+.done-mark { background: #fff2b6; }
+.lk-done .total { font-size: 46px; }
+.lk-done .lk-webbar .btn { background: var(--accent); font-weight: 700; }
+@media(max-width:359px) {
+  .app { padding-left: 16px; padding-right: 16px; }
+  .card { padding: 17px 15px; }
+  .daily-card h1 { font-size: 20px; }
+  .daily-overview { gap: 8px; }
+  .daily-count { font-size: 50px; }
+  .dashboard-ring { width: 91px; height: 91px; }
+  .dashboard-ring strong { font-size: 23px; }
+  .workout-options { flex-wrap: wrap; }
+  .workout-options > span { font-size: 10px; }
+  .workout-options .btn { font-size: 10px; }
+  .growth-symbol { width: 34px; height: 39px; }
+  .growth-link { gap: 7px; }
+  .growth-link strong { font-size: 12px; }
+  .growth-link .grow > span { font-size: 10px; }
+  .streak-label { font-size: 10px; }
+  .mission-list { padding: 0 12px; }
+  .mission { gap: 8px; }
+  .mission .ic { width: 31px; height: 36px; }
+  .mission .t { font-size: 12px; }
+  .mission .btn { padding: 8px; font-size: 10px; }
+  .reward-amount { font-size: 11px; padding: 7px 8px; }
+  .mission-received { max-width: 42px; font-size: 9px; }
+  .weekly-count { font-size: 46px; }
+  .weekly-overview .dashboard-ring { width: 80px; height: 80px; }
+  .shopitem .small { font-size: 9px; }
+  .shop-symbol { width: 31px; height: 36px; }
+  .shopitem .btn { min-width: 50px; padding: 7px 8px; }
+  .shopitem .t { font-size: 12px; }
+}
+@media(max-height:740px) {
+  .theme-basic .lk-main { margin-top: 11px; padding: 10px; }
+  .lk-stats { margin-top: 12px; padding: 10px 0; }
+}
+@media(max-height:600px) {
+  .theme-basic .lk-main { margin-top: 8px; padding: 6px; }
+  .lk-stats { margin-top: 8px; }
+}

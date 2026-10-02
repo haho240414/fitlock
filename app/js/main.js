@@ -7,8 +7,9 @@ import { FitLock, NativeApp, canShareFile, shareTextFile, downloadText } from '.
 import { loadSettings, updateSettings, loadState, updateState, onExternalChange, exportAll, importAll, resetAll } from './store.js';
 import {
   levelInfo, streakInfo, weekDots, todaySummary, missionsFor, claimMission, SHOP, THEMES, buy, setTheme,
-  recentDays, totals, skipsLeft, ingestNativeEvents, levelThreshold, summaryOf,
+  skipsLeft, ingestNativeEvents, levelThreshold, summaryOf, dayKey,
 } from './rewards.js';
+import { activityReport } from './activity.js';
 import { SENSOR_EXERCISES } from './motion/rep-sensor.js';
 import { listRecordings, exportRecordings, clearRecordings, setTruth } from './sensorlog.js';
 import { EXERCISE_BY_ID } from './engine/exercises.js';
@@ -26,6 +27,8 @@ const tabFromHash = () => {
 };
 
 let tab = 'home';
+let missionView = 'missions';
+let recordsRange = 'week';
 let status = null;   // 네이티브 상태 (FitLock.getStatus)
 let info = null;     // 기기 정보 (FitLock.getInfo)
 
@@ -110,90 +113,101 @@ function lockCardHtml() {
 }
 
 function missionRowHtml(m) {
-  const titles = { reps30: '30개 운동하기', reps60: '60개 운동하기', reps100: '100개 운동하기', unlock3: '잠금 3번 열기', unlock5: '잠금 5번 열기', morning: '아침 9시 전 운동', noskip: '건너뛰기 없이 잠금 2번 열기', extra: '목표보다 5개 더 하기', camera: '카메라로 1번 운동', practice: '연습 운동 1번' };
-  const btn = m.claimed ? '<span class="badge off">받음</span>'
+  const titles = { reps30: '30회 운동하기', reps60: '60회 운동하기', reps100: '100회 운동하기', unlock3: '잠금 3번 열기', unlock5: '잠금 5번 열기', morning: '아침 9시 전 운동', noskip: '건너뛰기 없이 잠금 2번 열기', extra: '목표보다 5회 더 하기', camera: '카메라로 1번 운동', practice: '연습 운동 1번' };
+  const glyph = m.id.startsWith('reps') || m.id === 'extra' || m.id === 'practice' ? 'workout'
+    : m.id === 'camera' ? 'camera' : m.id === 'morning' ? 'sun' : 'unlock';
+  const btn = m.claimed ? `<span class="mission-received">${icon('check')} 받았어요</span>`
     : m.done ? `<button class="btn coin sm" data-action="claim" data-id="${m.id}">+${m.reward}P 받기</button>`
-      : m.failed ? '<span class="badge bad">실패</span>' : `<span class="reward-amount num">+${m.reward}P</span>`;
+      : m.failed ? '<span class="mission-received">다음에 도전</span>' : `<span class="reward-amount num">+${m.reward}P</span>`;
+  const pct = Math.min(100, Math.round(m.progress / m.goal * 100));
   return `<div class="mission ${m.claimed ? 'claimed' : ''} ${m.failed ? 'failed' : ''}">
-    <div class="ic ${m.done ? 'complete' : ''}" aria-hidden="true">${m.done ? icon('check') : ''}</div>
+    <div class="ic mission-${glyph}" aria-hidden="true">${icon(m.claimed ? 'check' : glyph)}</div>
     <div class="grow"><div class="t" title="${esc(m.title)}">${esc(titles[m.id] || m.title)}</div>
-      <div class="mission-progress num" role="progressbar" aria-label="${esc(m.title)}" aria-valuenow="${m.progress}" aria-valuemin="0" aria-valuemax="${m.goal}">${m.progress} / ${m.goal}</div></div>
+      <div class="bar mission-meter" role="progressbar" aria-label="${esc(m.title)}" aria-valuenow="${m.progress}" aria-valuemin="0" aria-valuemax="${m.goal}"><i style="width:${pct}%"></i></div>
+      <div class="mission-progress num">${m.claimed ? '보상을 받았어요' : m.done ? '완료했어요' : m.failed ? '내일 새로운 미션이 기다려요' : `${m.progress} / ${m.goal}`}</div></div>
     ${btn}</div>`;
+}
+
+function sortedMissions(s) {
+  const rank = (m) => m.claimed ? 3 : m.failed ? 2 : m.done ? 0 : 1;
+  return missionsFor(s).sort((a, b) => rank(a) - rank(b));
+}
+
+function progressRing(pct, content, label, cls = '') {
+  const p = Math.max(0, Math.min(100, pct));
+  return `<div class="dashboard-ring ${cls}" role="img" aria-label="${esc(label)}"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="track" cx="50" cy="50" r="42"/><circle class="progress" cx="50" cy="50" r="42" pathLength="100" stroke-dasharray="100" stroke-dashoffset="${100 - p}"/></svg><div>${content}</div></div>`;
+}
+
+function growthCard(s, { week = false, interactive = true } = {}) {
+  const lv = levelInfo(s.earned), sk = streakInfo(s);
+  const tag = interactive ? 'button' : 'div';
+  return `<section class="card growth-card" aria-label="나의 성장"><div class="growth-heading"><${tag} class="growth-link" ${interactive ? 'data-action="growth" aria-label="나의 성장과 레벨 보기"' : ''}><span class="growth-symbol">${icon('sprout')}</span><span class="grow"><strong>${esc(lv.title)} · Lv.${lv.level}</strong><span>다음 레벨까지 ${fmt(lv.toNext)}P</span></span>${interactive ? icon('chevron') : ''}</${tag}><span class="streak-label">${sk.count}일 연속</span></div>
+    <div class="bar growth-progress" role="progressbar" aria-label="다음 레벨까지의 진행" aria-valuenow="${Math.round(lv.frac * 100)}" aria-valuemin="0" aria-valuemax="100"><i style="width:${Math.round(lv.frac * 100)}%"></i></div>
+    ${week ? `<div class="week">${weekDots(s).map((d) => `<div aria-label="${d.label}요일${d.today ? ', 오늘' : ''}: ${d.done ? '운동 완료' : d.frozen ? '보호권 사용' : '운동 전'}">${d.label}<i class="${d.done ? 'done' : d.frozen ? 'frozen' : ''} ${d.today ? 'today' : ''}">${d.done ? icon('check') : d.frozen ? icon('shield') : ''}</i></div>`).join('')}</div>` : ''}</section>`;
 }
 
 function renderHome() {
   const s = loadState();
   const st = loadSettings();
-  const sk = streakInfo(s);
   const today = todaySummary(s);
-  const week = weekDots(s);
-  const ms = missionsFor(s);
+  const ms = sortedMissions(s);
   const repMission = ms.find((m) => m.id.startsWith('reps'));
-  const available = ms.find((m) => m.done && !m.claimed);
   const goal = repMission?.goal || st.target;
   const progress = repMission?.progress || 0;
   const pct = Math.min(100, Math.round(progress / goal * 100));
   const goalText = repMission?.claimed ? '오늘의 운동 미션 완료!'
     : repMission?.done ? `운동 목표 달성! +${repMission.reward}P 받으세요`
-      : repMission ? `${goal}회 채우고 +${repMission.reward}P 받기` : '오늘도 운동하고 포인트를 모아보세요';
-  return `<section class="reward-hero" aria-label="오늘의 운동과 포인트">
-    <div class="row between"><h1>오늘의 운동</h1><span class="reward-goal">목표 ${goal}회</span></div>
-    <div class="reward-overview"><div class="reward-count num">${fmt(today.reps)}<small>회</small></div>${icon('reward', 'hero-coin')}</div>
-    <p class="reward-goal-copy">${goalText}</p>
-    <div class="bar reward-progress" role="progressbar" aria-label="오늘의 운동 미션" aria-valuenow="${progress}" aria-valuemin="0" aria-valuemax="${goal}"><i style="width:${pct}%"></i></div>
-    <div class="reward-wallet"><div><span>내 포인트</span><div class="wallet-value num"><b id="h-points">${fmt(s.points)}</b><small>P</small></div></div>
-      <button class="btn reward-claim" ${available ? `data-action="claim" data-id="${available.id}"` : 'data-tab-go="missions"'}>${icon('gift')} ${available ? `+${available.reward}P 받기` : '미션 보상 보기'} ${icon('chevron')}</button></div>
-  </section>
-  <section class="card workout-card" aria-label="오늘의 도전">
-    <div class="workout-row"><div class="workout-symbol">${icon('workout')}</div><div class="grow"><span class="workout-label">오늘의 도전</span><h2>${esc(exNameOf(st))} ${st.target}회</h2><p>${st.mode === 'camera' ? '카메라' : '폰 들고'}</p></div>
-      <button class="btn primary workout-start" data-action="practice">운동 시작 ${icon('chevron')}</button></div>
-    <button class="btn block workout-preview" data-action="preview">잠금화면 미리 보기 ${icon('chevron')}</button>
-  </section>
+      : repMission ? `${goal - progress}회 더 하면 +${repMission.reward}P` : '오늘도 한 세트로 시작해요';
+  return `<section class="card daily-card" aria-label="오늘의 운동과 포인트"><h1>오늘도 가볍게, 한 세트</h1>
+    <div class="daily-overview"><div class="grow"><p class="daily-target">오늘 목표 ${goal}회</p><div class="daily-count num">${fmt(today.reps)}<small>회</small></div><p class="daily-reward">${goalText}</p></div>
+    ${progressRing(pct, `<strong class="num">${pct}<small>%</small></strong>`, `오늘 운동 목표 ${goal}회 중 ${progress}회, ${pct}%`)}</div>
+    <button class="btn block workout-primary" data-action="practice">${esc(exNameOf(st))} ${st.target}회 시작 ${icon('chevron')}</button>
+    <div class="workout-options"><span>${icon(st.mode === 'camera' ? 'camera' : 'phone')} ${st.mode === 'camera' ? '카메라' : '폰 들고'} · 목표 ${st.target}회</span><button class="btn sm" data-action="preview">${icon('lock')} 잠금화면 보기 ${icon('chevron')}</button></div></section>
+  <button class="wallet-strip" data-tab-go="missions">${icon('reward')}<span class="grow"><span>내 포인트</span><strong class="num"><b id="h-points">${fmt(s.points)}</b><small>P</small></strong></span>${icon('chevron')}</button>
   ${lockCardHtml()}
-  <section class="card week-card" aria-label="이번 주 운동 기록"><div class="week-heading"><h2>이번 주 운동</h2><span title="최고 ${sk.best}일${s.inv.freezes ? ` · 보호권 ${s.inv.freezes}장` : ''}">${sk.count}일 연속${sk.atRisk ? ' · 오늘 이어가세요' : ''}</span></div><div class="week">${week.map((d) => `<div aria-label="${d.label}요일${d.today ? ', 오늘' : ''}: ${d.done ? '운동 완료' : d.frozen ? '보호권 사용' : '운동 전'}">${d.label}<i class="${d.done ? 'done' : d.frozen ? 'frozen' : ''} ${d.today ? 'today' : ''}">${d.done ? icon('check') : d.frozen ? icon('shield') : ''}</i></div>`).join('')}</div></section>
-  <section class="home-missions"><div class="section-heading"><h2>오늘의 포인트 미션</h2><button class="btn ghost sm" data-tab-go="missions">전체 보기 ${icon('chevron')}</button></div><div class="card mission-list">${ms.map(missionRowHtml).join('')}</div></section>`;
+  ${growthCard(s, { week: true })}
+  <section class="home-missions"><div class="section-heading"><h2>오늘의 미션</h2><button class="btn ghost sm" data-tab-go="missions">전체 보기 ${icon('chevron')}</button></div><div class="card mission-list">${ms.map(missionRowHtml).join('')}</div></section>`;
 }
 
 /* ================= 미션·상점 ================= */
 
+function shopRowHtml(it, s) {
+  const owned = it.id.startsWith('theme:') && s.inv.themes.includes(it.id.slice(6));
+  const qty = it.id === 'skip' ? s.inv.skipTickets : s.inv.freezes;
+  const limited = !it.id.startsWith('theme:') && qty >= it.max;
+  const glyph = it.id === 'skip' ? 'skip' : it.id === 'freeze' ? 'shield' : 'leaf';
+  const short = it.id === 'skip' ? '급할 때 기록 손해 없이 건너뛰어요' : '쉬어 가는 날에도 연속 기록을 지켜요';
+  return `<div class="shopitem"><span class="shop-symbol ${it.id === 'freeze' ? 'rose' : ''}">${icon(glyph)}</span><div class="grow"><div class="t">${esc(it.name)}</div><div class="small muted">${esc(short)}</div><div class="small muted">보유 ${qty}장${!owned && !limited && s.points < it.price ? ` · ${fmt(it.price - s.points)}P 더 필요해요` : ''}</div></div><button class="btn coin sm" data-action="buy" data-id="${it.id}" ${owned || limited || s.points < it.price ? 'disabled' : ''}>${owned ? '보유' : limited ? '보유 한도' : `${it.price}P`}</button></div>`;
+}
+
 function renderMissions() {
-  const s = loadState();
-  const lv = levelInfo(s.earned);
-  const items = SHOP.map((it) => {
-    let own = '';
-    if (it.id === 'skip') own = `가진 것 ${s.inv.skipTickets}장`;
-    else if (it.id === 'freeze') own = `가진 것 ${s.inv.freezes}장`;
-    else if (s.inv.themes.includes(it.id.slice(6))) own = '가지고 있어요';
-    const owned = it.id.startsWith('theme:') && s.inv.themes.includes(it.id.slice(6));
-    return `<div class="shopitem"><div class="grow"><div class="t" style="font-weight:700">${esc(it.name)}</div>
-      <div class="small muted">${esc(it.desc)}</div><div class="small dim">${own}</div></div>
-      <button class="btn ${owned ? '' : 'coin'} sm" data-action="buy" data-id="${it.id}" ${owned || s.points < it.price ? 'disabled' : ''}>${owned ? '보유' : `${it.price}P`}</button></div>`;
+  const s = loadState(), lv = levelInfo(s.earned);
+  const themes = SHOP.filter((it) => it.id.startsWith('theme:')).map((it) => {
+    const th = it.id.slice(6), owned = s.inv.themes.includes(th), on = s.inv.theme === th;
+    return `<button class="theme-tile theme-${th} ${on ? 'on' : ''}" data-action="${owned ? 'theme' : 'buy'}" data-id="${owned ? th : it.id}" ${!owned && s.points < it.price ? 'disabled' : ''} aria-pressed="${on}">${icon(th === 'sunset' ? 'sun' : 'leaf')}<strong>${THEMES[th]}</strong><span>${on ? '사용 중' : owned ? '선택하기' : `${it.price}P`}</span></button>`;
   }).join('');
-  const themes = s.inv.themes.map((th) => `<button class="${s.inv.theme === th ? 'on' : ''}" data-action="theme" data-id="${th}">${THEMES[th] || th}</button>`).join('');
-  const ladder = Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
-    const t = levelInfo(levelThreshold(n)).title;
-    return `<div class="logrow"><span>${icon(n <= lv.level ? 'check' : 'lock')} Lv.${n} ${esc(t)}</span><span class="muted num">${fmt(levelThreshold(n))}P</span></div>`;
-  }).join('');
-  return `
-  <div class="page-intro"><h1>미션과 상점</h1><p>운동하고 모은 포인트, 나를 위한 보상으로.</p></div>
-  <section class="card points-summary"><div><span>내 포인트</span><strong class="num">${fmt(s.points)}<small>P</small></strong><p>오늘 +${fmt(todaySummary(s).pts)}P 적립</p></div>${icon('reward')}</section>
-  <section class="card"><h2>오늘의 미션</h2><p class="small muted" style="margin:-4px 0 6px">날마다 바뀌어요. 다 하면 포인트를 받으세요.</p>
-    ${missionsFor(s).map(missionRowHtml).join('')}</section>
-  <section class="card"><div class="row between"><h2 style="margin:0">상점</h2><span class="chip coin">${icon('coin')} <b>${fmt(s.points)}</b>P</span></div>
-    <p class="small muted">포인트는 앱 안에서만 써요 (현금·기프티콘 아님)</p>${items}</section>
-  <section class="card"><h2>잠금화면 테마</h2><div class="seg">${themes}</div></section>
-  <section class="card"><h2>레벨</h2><p class="small muted" style="margin:-4px 0 6px">지금까지 모은 포인트로 올라가요 (써도 안 내려가요)</p>${ladder}</section>`;
+  const shop = `<section class="card rewards-shop"><h2>나를 위한 보상</h2>${SHOP.filter((it) => !it.id.startsWith('theme:')).map((it) => shopRowHtml(it, s)).join('')}
+    ${missionView === 'shop' ? `<h3>잠금화면 테마</h3><div class="theme-tiles">${themes}</div><button class="btn block sm basic-theme" data-action="theme" data-id="basic">기본 테마 ${s.inv.theme === 'basic' ? '사용 중' : '선택하기'}</button>` : '<button class="btn block shop-more" data-action="mission-view" data-id="shop">테마와 모든 보상 보기 '+icon('chevron')+'</button>'}
+    <p class="shop-note">포인트는 핏락 안에서만 사용해요</p></section>`;
+  return `<div class="page-intro"><h1>미션과 보상</h1><p>작은 움직임을 나를 위한 보상으로</p></div>
+    <section class="card points-summary"><div><span>내 포인트</span><strong class="num">${fmt(s.points)}<small>P</small></strong><p>오늘 +${fmt(todaySummary(s).pts)}P</p></div>${progressRing(lv.frac * 100, icon('sprout'), `Lv.${lv.level}, 다음 레벨까지 ${lv.toNext}P`, 'leaf-ring')}</section>
+    <div class="seg page-seg" role="group" aria-label="미션과 상점"><button class="${missionView === 'missions' ? 'on' : ''}" data-action="mission-view" data-id="missions" aria-pressed="${missionView === 'missions'}">오늘의 미션</button><button class="${missionView === 'shop' ? 'on' : ''}" data-action="mission-view" data-id="shop" aria-pressed="${missionView === 'shop'}">포인트 상점</button></div>
+    ${missionView === 'missions' ? `<section class="card mission-list">${sortedMissions(s).map(missionRowHtml).join('')}</section>` : ''}${shop}
+    <button class="card growth-shortcut" data-action="growth">${icon('chart')}<span class="grow">내 성장 보기<small>지금까지의 꾸준함을 확인하세요</small></span>${icon('chevron')}</button>`;
 }
 
 /* ================= 기록 ================= */
 
 function renderRecords() {
   const s = loadState();
-  const t = totals(s);
-  const days = recentDays(s, 14);
-  const max = Math.max(10, ...days.map((d) => d.reps));
-  const today = days[days.length - 1].key;
-  const chart = days.map((d) => `<div class="${d.key === today ? 'today' : ''}" title="${d.key} ${d.reps}개"><i style="height:${Math.round((d.reps / max) * 100)}%"></i>${Number(d.key.slice(8))}</div>`).join('');
+  const report = activityReport(s, { range: recordsRange });
+  const sk = streakInfo(s);
+  const max = Math.max(10, ...report.chart.map((d) => d.reps));
+  const peak = report.chart.findLast((d) => d.reps > 0)?.key;
+  const chart = report.chart.map((d, i) => `<div class="activity-column ${d.today ? 'today' : ''} ${d.key === peak ? 'latest' : ''} ${d.future ? 'future' : ''}" aria-label="${d.key}: ${d.future ? '아직 오지 않은 날' : `${d.reps}회`}"><div class="plot"><i style="height:${Math.round(d.reps / max * 100)}%">${!d.future ? `<span>${fmt(d.reps)}</span>` : ''}</i></div><span class="day-label">${recordsRange === 'week' ? '월화수목금토일'[i] : Number(d.key.slice(8))}</span></div>`).join('');
+  const comparison = report.previous.reps === 0 ? report.week.reps > 0 ? '이번 주의 첫 움직임을 쌓고 있어요' : '첫 운동으로 이번 주를 시작해요'
+    : report.delta === 0 ? '지난주 같은 요일까지와 같아요' : `지난주 같은 요일까지보다 ${fmt(Math.abs(report.delta))}회 ${report.delta > 0 ? '더 했어요' : '적어요'}`;
+  const exerciseRows = report.exercises.map((e) => `<button class="exercise-row" data-action="exercise-record" data-id="${esc(e.id)}"><span class="shop-symbol">${icon('workout')}</span><span class="grow"><strong>${esc(exerciseName(e.id))}</strong><span class="bar"><i style="width:${e.pct}%"></i></span></span><span class="exercise-value"><b class="num">${fmt(e.reps)}회</b><small>${e.pct}%</small></span>${icon('chevron')}</button>`).join('');
   const kindLabel = { unlock: '잠금 해제', practice: '운동', skip: '건너뜀', pass: '그냥 열림', mission: '미션', buy: '구매' };
   const passWhy = { call: '전화', 'no-sensor': '센서 없음', 'no-camera': '카메라 못 씀', error: '앱 오류', watchdog: '화면 오류', home: '홈 버튼' };
   const log = [...s.log].reverse().slice(0, 40).map((l) => {
@@ -203,18 +217,30 @@ function renderRecords() {
     if (l.kind === 'skip') what += l.free ? ' (무료)' : '';
     if (l.kind === 'pass') what += ` (${passWhy[l.reason] || l.reason})`;
     if (l.kind === 'buy') what += ` · ${SHOP.find((x) => x.id === l.id)?.name || l.id}`;
-    return `<div class="logrow"><span>${d.getMonth() + 1}/${d.getDate()} ${hhmm(l.at)} ${esc(what)}</span><span class="num ${l.pts > 0 ? '' : 'muted'}">${l.pts > 0 ? '+' : ''}${l.pts || 0}P</span></div>`;
-  }).join('') || `<div class="empty-state">${icon('chart')}<p>첫 움직임을 기다리고 있어요.</p><p class="small">운동을 시작하면 여기에 기록이 쌓여요.</p></div>`;
+    return `<div class="activity-row"><span class="activity-symbol">${icon(l.kind === 'unlock' ? 'unlock' : l.kind === 'mission' ? 'gift' : l.kind === 'buy' ? 'bag' : l.kind === 'skip' ? 'skip' : 'workout')}</span><span class="grow"><small>${d.getMonth() + 1}/${d.getDate()} ${hhmm(l.at)}</small><strong>${esc(what)}</strong></span><span class="num activity-points ${l.pts > 0 ? 'earned' : ''}">${l.pts > 0 ? '+' : ''}${l.pts || 0}P</span></div>`;
+  }).join('') || `<div class="empty-state">${icon('chart')}<p>첫 움직임을 기다리고 있어요.</p><p class="small">한 세트만 해도 오늘의 기록이 생겨요.</p><button class="btn primary" data-action="practice">운동 시작하기</button></div>`;
   return `
-  <div class="page-intro"><h1>나의 운동 기록</h1><p>차곡차곡 쌓이는 운동과 포인트를 확인하세요.</p></div>
-  <section class="card"><div class="stats">
-    <div class="stat"><b class="num">${fmt(t.reps)}</b><span>지금까지 한 개수</span></div>
-    <div class="stat"><b class="num">${fmt(t.unlocks)}</b><span>운동으로 연 잠금</span></div>
-    <div class="stat"><b class="num">${fmt(t.days)}</b><span>운동한 날</span></div>
-    <div class="stat"><b class="num">${fmt(s.streak.best)}</b><span>최장 연속(일)</span></div>
-  </div></section>
-  <section class="card"><h2>최근 2주</h2><div class="chart">${chart}</div></section>
-  <section class="card"><h2>최근 기록</h2>${log}</section>`;
+  <div class="page-intro"><h1>나의 운동 기록</h1><p>꾸준히 움직인 만큼 쌓이는 변화</p></div>
+  <section class="card weekly-summary"><div class="weekly-overview"><div class="grow"><h2>이번 주</h2><strong class="weekly-count num">${fmt(report.week.reps)}<small>회</small></strong><p>${comparison}</p></div>${progressRing(report.week.days / 7 * 100, `<strong>${report.week.days}<small>일</small></strong><span>이번 주</span>`, `이번 주 7일 중 ${report.week.days}일 운동`)}</div><div class="weekly-stats"><div><span>운동한 날</span><strong>${report.week.days}<small>일</small></strong></div><div><span>잠금 해제</span><strong>${report.week.unlocks}<small>번</small></strong></div><div><span>연속 기록</span><strong>${sk.count}<small>일</small></strong></div></div></section>
+  <section class="card activity-chart-card"><div class="seg page-seg" role="group" aria-label="기록 기간"><button class="${recordsRange === 'week' ? 'on' : ''}" data-action="record-range" data-id="week">이번 주</button><button class="${recordsRange === 'fortnight' ? 'on' : ''}" data-action="record-range" data-id="fortnight">최근 2주</button></div><div class="row between"><h2>하루 운동량</h2><span class="small muted">(회)</span></div><div class="activity-chart ${recordsRange === 'fortnight' ? 'fortnight' : ''}">${chart}</div><p class="chart-note">${recordsRange === 'week' ? '월요일부터 오늘까지의 운동을 보여줘요' : '오늘을 포함한 최근 14일의 운동을 보여줘요'}</p></section>
+  <section class="card exercise-summary"><h2>운동별 기록</h2><p class="small muted">${recordsRange === 'week' ? '이번 주' : '최근 2주'}</p>${exerciseRows || '<p class="small muted">첫 운동을 하면 종류별 기록이 쌓여요</p>'}</section>
+  <section class="card"><h2>최근 활동</h2>${log}</section>`;
+}
+
+const exerciseName = (id) => EXERCISE_BY_ID[id]?.name || SENSOR_EXERCISES[id]?.name || id;
+
+function openGrowth() {
+  const s = loadState(), lv = levelInfo(s.earned), sk = streakInfo(s);
+  const ladder = Array.from({ length: 10 }, (_, i) => i + 1).map((n) => `<div class="logrow"><span>${icon(n <= lv.level ? 'check' : 'lock')} Lv.${n} ${esc(levelInfo(levelThreshold(n)).title)}</span><span class="muted num">${fmt(levelThreshold(n))}P</span></div>`).join('');
+  sheet({ title: '나의 성장', html: `${growthCard(s, { interactive: false })}<p>누적 ${fmt(s.earned)}P · 최장 ${sk.best}일 연속<br>포인트를 써도 레벨은 내려가지 않아요.</p>${ladder}`, actions: [{ label: '좋아요, 계속 움직여요', cls: 'primary' }] });
+}
+
+function openExerciseRecord(id) {
+  const s = loadState(), r = activityReport(s, { range: recordsRange });
+  const item = r.exercises.find((e) => e.id === id);
+  if (!item) return;
+  const logs = [...s.log].reverse().filter((l) => ['unlock', 'practice'].includes(l.kind) && l.exercise === id && dayKey(l.at) >= r.periodStart && dayKey(l.at) <= r.today).slice(0, 20);
+  sheet({ title: `${exerciseName(id)} 기록`, html: `<p>${recordsRange === 'week' ? '이번 주' : '최근 2주'} <b>${fmt(item.reps)}회</b></p>${logs.map((l) => `<div class="logrow"><span>${dayKey(l.at).slice(5)} ${hhmm(l.at)} · ${l.mode === 'camera' ? '카메라' : '폰 들고'}</span><b>${fmt(l.reps)}회</b></div>`).join('') || '<p>이 기간의 상세 활동 내역은 남아 있지 않아요.</p>'}`, actions: [{ label: '닫기', cls: 'primary' }] });
 }
 
 /* ================= 설정 ================= */
@@ -325,7 +351,8 @@ function render() {
   const focusData = active?.closest('#view') ? { ...active.dataset } : null;
   const s = loadState();
   const lv = levelInfo(s.earned);
-  $('top-level').innerHTML = `Lv.<b>${lv.level}</b> ${esc(lv.title)}`;
+  $('top-level').innerHTML = `Lv.<b>${lv.level}</b> ${icon('chevron')}`;
+  $('top-level').setAttribute('aria-label', `나의 성장 보기, Lv.${lv.level} ${lv.title}`);
   const views = { home: renderHome, missions: renderMissions, records: renderRecords, settings: renderSettings };
   $('view').innerHTML = (views[tab] || renderHome)();
   document.body.dataset.view = tab;
@@ -352,7 +379,7 @@ function render() {
   for (const select of document.querySelectorAll('input[data-win]')) select.setAttribute('aria-label', `시간대 ${Number(select.dataset.win) + 1} ${select.dataset.k === 'start' ? '시작' : '종료'}`);
   if (focusData && Object.keys(focusData).length) {
     const replacement = [...$('view').querySelectorAll('button, input, select')].find((el) => Object.entries(focusData).every(([k, v]) => el.dataset[k] === v));
-    replacement?.focus({ preventScroll: true });
+    (replacement || $('view')).focus({ preventScroll: true });
   }
 }
 
@@ -603,6 +630,10 @@ async function onAction(el) {
   const a = el.dataset.action;
   const id = el.dataset.id;
   switch (a) {
+    case 'growth': return openGrowth();
+    case 'mission-view': missionView = id === 'shop' ? 'shop' : 'missions'; render(); return;
+    case 'record-range': recordsRange = id === 'fortnight' ? 'fortnight' : 'week'; render(); return;
+    case 'exercise-record': return openExerciseRecord(id);
     case 'setup': return openSetup();
     case 'practice': location.href = 'lock.html?practice=1'; return;
     case 'preview':
@@ -612,9 +643,8 @@ async function onAction(el) {
     case 'claim': {
       const r = updateState((s) => claimMission(s, id));
       if (!r.ok) { toast(r.error); return; }
-      const from = el;
+      coinBurst(el, $('h-points') || $('top-level'));
       render();
-      coinBurst(from, $('h-points') || $('top-level'));
       toast(`+${r.pts}P 받았어요${r.levelUp ? ` · 레벨 업! Lv.${r.levelUp.to}` : ''}`);
       syncNative();
       return;

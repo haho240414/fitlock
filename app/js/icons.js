@@ -14,6 +14,7 @@ const paths = {
   chevron: '<path d="m9 5 7 7-7 7"/>',
   check: '<path d="m5 12 4 4L19 6"/>',
   leaf: '<path d="M20 4c0 10-3 16-9 16a7 7 0 0 1-7-7C4 6 11 4 20 4Z"/><path d="m4 20 11-11"/>',
+  sprout: '<path d="M12 21v-8"/><path fill="currentColor" d="M12 13C12 6 15 3 21 3c0 6-3 10-9 10Z"/><path fill="currentColor" d="M12 16C6 16 3 13 3 7c6 0 9 3 9 9Z"/>',
   coin: '<circle cx="12" cy="12" r="9"/><path d="M10 16V8h3a2 2 0 0 1 0 4h-3"/>',
   reward: '<circle cx="12" cy="12" r="9" fill="#ffed8c" stroke-width="1.4"/><circle cx="12" cy="12" r="6.8" fill="#ffdf43" stroke="none"/><path d="M9.3 7.2h3.3a3.4 3.4 0 0 1 0 6.8h-.7v3H9.3Zm2.6 2.4v2h.6a1 1 0 0 0 0-2Z" fill="currentColor" fill-rule="evenodd" stroke="none"/>',
   gift: '<rect x="3" y="8" width="18" height="5" rx="1"/><path d="M5 13v8h14v-8M12 8v13m0-13H8a3 3 0 1 1 3-3l1 3Zm0 0h4a3 3 0 1 0-3-3l-1 3Z"/>',
