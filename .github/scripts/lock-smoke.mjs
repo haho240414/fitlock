@@ -108,6 +108,23 @@ function tapText(re) {
   return null;
 }
 
+/** Inspect the actual native bounds so a clipped or lowered safety button fails the smoke run. */
+function nativeBarLayout() {
+  sh('uiautomator dump /sdcard/ui.xml', 30000);
+  const xml = sh('cat /sdcard/ui.xml');
+  const items = [...xml.matchAll(/<node [^>]*>/g)].map(([node]) => {
+    const text = (node.match(/ text="([^"]*)"/) || [])[1] || '';
+    const bounds = node.match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/);
+    return { text, bounds: bounds && bounds.slice(1).map(Number) };
+  });
+  const emergency = items.find((n) => n.text === '긴급 전화')?.bounds;
+  const skip = items.find((n) => n.text === '이번엔 건너뛰기')?.bounds;
+  const hint = items.find((n) => /^오늘 건너뛰기 \d+회 남음$/.test(n.text))?.bounds;
+  return { emergency, skip, hint,
+    aligned: !!(emergency && skip && hint && emergency[1] === skip[1] && emergency[3] === skip[3]
+      && emergency[3] > emergency[1] && emergency[2] < skip[0] && hint[3] < skip[1]) };
+}
+
 /* ---------- WebView (크롬 개발자 도구 프로토콜) ---------- */
 
 class Cdp {
@@ -211,6 +228,8 @@ const c1 = await cycle('2_lock_over_keyguard');
 check('lockPrelaunched', c1.off.lockAlive);
 check('lockOnTop', /LockActivity/.test(c1.on.focus || '') || /LockActivity/.test(c1.on.resumed || ''));
 check('keyguardUnder', c1.on.keyguard === true, false);
+const nativeBar = log('3b 하단 버튼 정렬', nativeBarLayout());
+check('nativeBarAligned', nativeBar.aligned);
 
 let lock = (await connect(isLock, 30000)) || NONE;
 const motion = log('4 잠금 화면 센서', await lock.eval(`(async () => {

@@ -334,8 +334,9 @@ body.lock.theme-forest { --lk-bg: #f0f6ee; --lk-accent: #55794c; --lk-track: #dc
 .points-summary strong { overflow-wrap: anywhere; }
 .switch input:checked + i::after { background: var(--text); }
 .lk-modes button.on { background: #fff; color: var(--text); border-color: var(--text); }
-.lk-webbar .btn { background: #fff; border-color: #fff; color: var(--text); }
-.lk-webbar .btn.ghost { background: transparent; border-color: transparent; }
+.lk-webbar { align-items: center; }
+.lk-webbar .btn { min-height: 52px; border-radius: 14px; background: var(--accent); border-color: var(--accent); color: var(--text); font-weight: 650; }
+.lk-webbar .btn.ghost { background: #fff; border-color: var(--line); }
 .lk-done .lk-webbar .btn { background: #fff; color: var(--text); }
 .lk-cam .count span { color: #ffe457; }
 .lk-cam .chip { background: #ffe457; color: var(--text); }
