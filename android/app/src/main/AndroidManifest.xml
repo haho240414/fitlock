@@ -45,6 +45,12 @@
                 android:value="Exercise lock screen: listens for screen on/off to show a workout screen above the lock screen. Camera and sensors are never used by the service." />
         </service>
 
+        <!-- 15분마다 잠금 서비스가 살아 있는지 보고 죽었으면 다시 켠다 -->
+        <service
+            android:name=".LockWatchdogJob"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
         <!-- 폰을 다시 켜거나 앱을 업데이트하면 잠금 서비스를 다시 켠다 -->
         <receiver
             android:name=".BootReceiver"

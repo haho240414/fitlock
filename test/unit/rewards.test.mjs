@@ -188,3 +188,20 @@ test('깨진 저장값도 쓸 수 있게 채운다, 설정은 기본값 위에 �
   assert.equal(st.lock.schedule.windows.length, 1);
   assert.equal(DEFAULT_SETTINGS.lock.enabled, false); // 기본값은 그대로
 });
+
+test('잠금 화면 운동 기록 예비본: 웹에 이미 있으면 그대로, 날아갔으면 다시 넣는다', () => {
+  const t = at('2026-10-01T10:00');
+  const ev = { id: 'n1', type: 'success', sid: 'abc', kind: 'unlock', exercise: 'squat', mode: 'sensor', reps: 10, target: 10, at: t };
+  const kept = emptyState();
+  recordSession(kept, { kind: 'unlock', reps: 10, target: 10, at: t, sid: 'abc' });
+  const before = kept.points;
+  ingestNativeEvents(kept, [ev]);
+  assert.equal(kept.points, before);
+  assert.equal(kept.log.length, 1);
+  const lost = emptyState();
+  ingestNativeEvents(lost, [ev]);
+  assert.equal(lost.days['2026-10-01'].unlocks, 1);
+  assert.equal(lost.points, before);
+  ingestNativeEvents(lost, [ev]); // 같은 이벤트 두 번 → 한 번만
+  assert.equal(lost.days['2026-10-01'].unlocks, 1);
+});

@@ -88,6 +88,13 @@ function lockCardHtml() {
   if (status && !status.overlay) warns.push("'다른 앱 위에 표시'가 꺼져 있어 잠금이 안 떠요");
   if (status && status.enabled && !status.serviceRunning) warns.push('잠금 서비스가 멈춰 있어요');
   if (status && !status.battery) warns.push('배터리 절전 때문에 잠금이 가끔 안 뜰 수 있어요');
+  // 설정 실수: 이러면 잠금이 아예 안 뜬다
+  const S = st.lock.schedule;
+  if (S.enabled && !S.windows.some((w) => w.days.length && w.start)) warns.push('시간대에 요일이 하나도 없어서 잠금이 안 떠요 (설정 → 시간대)');
+  if (st.lock.places.enabled && !st.lock.places.list.length) warns.push('장소를 켰는데 등록한 곳이 없어요 — 장소 조건 없이 잠가요');
+  if (st.lock.places.enabled && st.lock.places.list.length && status && !status.backgroundLocation) {
+    warns.push("위치 '항상 허용'이 꺼져 있어 장소를 몰라요 — 모르면 잠그지 않아요");
+  }
   let why = `화면을 켜면 ${esc(exNameOf(st))} ${st.target}개 · 한 번 하면 ${freeLabel(st.lock.freeMinutes)} 자유`;
   const d = status?.decision;
   if (d?.reason === 'free' && d.until) why = `지금은 자유 시간 — ${hhmm(d.until)}부터 다시 잠겨요`;

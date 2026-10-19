@@ -108,8 +108,10 @@ class FitLockPlugin : Plugin() {
         try {
             if (cfg.optBoolean("enabled", false)) {
                 if (LockService.running) LockService.refresh(ctx) else LockService.start(ctx)
+                LockWatchdogJob.schedule(ctx)
             } else {
                 LockService.stop(ctx)
+                LockWatchdogJob.cancel(ctx)
             }
         } catch (e: Exception) {
             Log.w(TAG, "service", e)
@@ -180,6 +182,15 @@ class FitLockPlugin : Plugin() {
         if (lock == null) {
             call.resolve(JSObject().put("closed", false))
             return
+        }
+        if (result == "success") {
+            // 웹 저장소(localStorage)는 늦게 디스크에 쓰여서, 바로 앱이 죽으면 기록이 날아갈 수 있다 → 예비본을 네이티브에도
+            val d = call.data
+            val extra = JSONObject()
+            for (k in listOf("sid", "kind", "exercise", "mode")) if (d.has(k)) extra.put(k, d.optString(k))
+            extra.put("reps", d.optInt("reps", 0))
+            extra.put("target", d.optInt("target", 0))
+            LockPrefs.pushEvent(context, "success", extra)
         }
         call.resolve(JSObject().put("closed", true))
         activity.runOnUiThread { lock.finishFromWeb(result) }

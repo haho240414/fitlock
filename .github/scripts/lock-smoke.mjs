@@ -245,6 +245,8 @@ const pts = log('6 포인트', await main.eval(`(async () => {
   return { points: s.points, unlocks: s.log.filter((l) => l.kind === 'unlock').length, status: await window.__fitlockApp.FitLock.getStatus() };
 })()`));
 check('points', pts?.points > 0 && pts?.unlocks >= 1);
+// 네이티브 예비본(success 이벤트)이 들어와도 두 번 세지 않아야: 5회 5P + 잠금 해제 5P + 출석 10P = 20P, 기록 1번
+check('noDoubleCount', pts?.points === 20 && pts?.unlocks === 1);
 
 // 매번 잠금(freeMinutes 0)이라 다시 끄고 켜면 또 잠긴다
 const c2 = await cycle('5_lock_again');

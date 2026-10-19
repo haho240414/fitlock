@@ -168,7 +168,7 @@ function extendStreak(state, key) {
  * @param {{kind:'unlock'|'practice', exercise:string, mode:'sensor'|'camera', reps:number, target?:number, at?:number}} s
  * @returns {{gains:{label:string,pts:number}[], total:number, levelUp:{from:number,to:number}|null, streak:object, day:object}}
  */
-export function recordSession(state, { kind = 'unlock', exercise = 'squat', mode = 'sensor', reps = 0, target = 0, at = Date.now(), name = '' }) {
+export function recordSession(state, { kind = 'unlock', exercise = 'squat', mode = 'sensor', reps = 0, target = 0, at = Date.now(), name = '', sid = null }) {
   const key = dayKey(at);
   reps = Math.max(0, Math.round(reps) || 0);
   if (!reps) { // 하나도 못 했으면 기록만 (출석·연속 기록은 실제로 한 운동만)
@@ -197,7 +197,7 @@ export function recordSession(state, { kind = 'unlock', exercise = 'squat', mode
 
   const total = gains.reduce((a, g) => a + g.pts, 0);
   addPoints(state, key, total);
-  pushLog(state, { at, kind, exercise, mode, reps, target, pts: total });
+  pushLog(state, { at, kind, exercise, mode, reps, target, pts: total, ...(sid ? { sid } : {}) });
   const after = levelInfo(state.earned).level;
   return { gains, total, levelUp: after > before ? { from: before, to: after } : null, streak, day: d };
 }
@@ -325,7 +325,12 @@ export function ingestNativeEvents(state, events, { freeLimit = 3 } = {}) {
     if (!e || !e.id || seen.has(e.id)) continue;
     seen.add(e.id);
     if (e.type === 'skip' || e.type === 'home') applied.push({ e, r: recordSkip(state, { at: e.at, reason: e.type, freeLimit }) });
-    else recordPass(state, { at: e.at, reason: e.type });
+    else if (e.type === 'success') {
+      // 잠금 화면이 저장한 운동 기록의 예비본 — 웹 저장이 날아갔을 때만(같은 sid 가 없을 때) 다시 넣는다
+      if (e.sid && !state.log.some((l) => l.sid === e.sid)) {
+        applied.push({ e, r: recordSession(state, { kind: e.kind || 'unlock', exercise: e.exercise, mode: e.mode, reps: e.reps, target: e.target, at: e.at, sid: e.sid }) });
+      }
+    } else recordPass(state, { at: e.at, reason: e.type });
   }
   state.ingested = [...seen].slice(-300);
   return applied;

@@ -33,6 +33,7 @@ const ui = {
   carried: 0,          // 다른 세는 방법으로 이미 한 횟수
   count: 0,
   startedAt: Date.now(),
+  sid: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`, // 이 도전의 id (기록 예비본 중복 방지)
 };
 let motion = null;
 let cam = null;
@@ -155,6 +156,8 @@ function startSensor() {
 // 자리 잡기 안내 음성: 같은 말은 두 번까지, 10초 간격 (세기 시작 전에만 — camera-counter 가 그때만 알린다)
 const frameSaid = {};
 let lastFrameSay = 0;
+let noneSince = null;
+let noneTold = false;
 function onFrame(f, good) {
   const msg = $('lk-cam-msg');
   if (good) {
@@ -163,8 +166,19 @@ function onFrame(f, good) {
     return;
   }
   if (!f) return;
-  msg.textContent = f.text;
   const now = performance.now();
+  // 20초 넘게 사람을 못 찾으면: 폰 들고 하기로 바꾸자고 한다 (카메라 앞에 서기 어려운 자리일 수 있다)
+  if (f.code === 'none') {
+    noneSince ??= now;
+    if (now - noneSince > 20000 && !noneTold) {
+      noneTold = true;
+      msg.textContent = "사람이 안 보여요. 어렵다면 위의 '📱 폰 들고 하기'로 바꿔도 돼요";
+      voice.say('사람이 안 보여요. 폰 들고 하기로 바꿔도 돼요', { interrupt: true });
+      return;
+    }
+    if (noneTold) return;
+  } else noneSince = null;
+  msg.textContent = f.text;
   if (f.speak && (frameSaid[f.code] || 0) < 2 && now - lastFrameSay > 10000) {
     frameSaid[f.code] = (frameSaid[f.code] || 0) + 1;
     lastFrameSay = now;
@@ -257,6 +271,7 @@ async function complete() {
   // 앱에서 '잠금화면 보기'(미리 보기)로 한 건 연습으로 친다 (잠금 해제 보너스·미션 없음)
   const kind = ui.kind === 'practice' || ui.info?.reason === 'preview' ? 'practice' : 'unlock';
   const res = updateState((s) => recordSession(s, {
+    sid: ui.sid,
     kind, exercise: exId(), mode: ui.mode, reps: ui.count, target, name: exName(),
   }));
   showDone(res);
@@ -294,7 +309,10 @@ function pass(reason, msg) {
 
 function finish(result, extra = {}) {
   if (ui.kind === 'lock') {
-    FitLock.finishLock({ result, reps: ui.count, exercise: exId(), mode: ui.mode, ...extra }).catch(() => {});
+    FitLock.finishLock({
+      result, reps: ui.count, exercise: exId(), mode: ui.mode, target, sid: ui.sid,
+      kind: ui.info?.reason === 'preview' ? 'practice' : 'unlock', ...extra,
+    }).catch(() => {});
   } else if (ui.kind === 'practice') {
     location.replace('index.html#home');
   } else {

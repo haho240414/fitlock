@@ -11,6 +11,7 @@ class BootReceiver : BroadcastReceiver() {
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED -> {
                 if (!LockPrefs.enabled(ctx)) return
+                LockWatchdogJob.schedule(ctx)
                 try {
                     LockService.start(ctx)
                 } catch (e: Exception) {
